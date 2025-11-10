@@ -2,7 +2,9 @@
 
 namespace App\Filament\Resources\Products\Schemas;
 
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\KeyValue;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -189,6 +191,55 @@ class ProductForm
                             ->rows(3)
                             ->maxLength(160)
                             ->helperText('Deskripsi untuk mesin pencari, maksimal 160 karakter'),
+                    ])
+                    ->collapsible()
+                    ->collapsed(),
+
+                Section::make('Gambar Produk')
+                    ->description('Kelola gambar produk yang akan ditampilkan di website')
+                    ->schema([
+                        Repeater::make('images')
+                            ->relationship('images')
+                            ->schema([
+                                FileUpload::make('path')
+                                    ->label('Gambar')
+                                    ->image()
+                                    ->imageEditor()
+                                    ->imageEditorAspectRatios([
+                                        '1:1',
+                                        '4:3',
+                                        '16:9',
+                                    ])
+                                    ->directory('products')
+                                    ->visibility('public')
+                                    ->required()
+                                    ->maxSize(2048)
+                                    ->helperText('Format: JPG, PNG, WEBP. Maksimal 2MB'),
+
+                                TextInput::make('alt_text')
+                                    ->label('Teks Alternatif')
+                                    ->maxLength(255)
+                                    ->helperText('Deskripsi gambar untuk SEO dan aksesibilitas'),
+
+                                Toggle::make('is_thumbnail')
+                                    ->label('Jadikan Thumbnail Utama')
+                                    ->default(false)
+                                    ->helperText('Gambar yang ditampilkan di daftar produk'),
+
+                                TextInput::make('sort_order')
+                                    ->label('Urutan')
+                                    ->numeric()
+                                    ->default(0)
+                                    ->helperText('Urutan tampilan gambar (0 = pertama)'),
+                            ])
+                            ->columns(2)
+                            ->defaultItems(0)
+                            ->reorderable()
+                            ->orderColumn('sort_order')
+                            ->addActionLabel('Tambah Gambar')
+                            ->collapsed()
+                            ->itemLabel(fn (array $state): ?string => $state['alt_text'] ?? 'Gambar Produk')
+                            ->cloneable(),
                     ])
                     ->collapsible()
                     ->collapsed(),
