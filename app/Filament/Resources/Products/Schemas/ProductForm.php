@@ -211,9 +211,12 @@ class ProductForm
                                         '16:9',
                                     ])
                                     ->directory('products')
-                                    ->visibility('public')
-                                    ->required()
+                                    ->disk('public')
                                     ->maxSize(2048)
+                                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                                    ->downloadable()
+                                    ->openable()
+                                    ->previewable()
                                     ->helperText('Format: JPG, PNG, WEBP. Maksimal 2MB'),
 
                                 TextInput::make('alt_text')

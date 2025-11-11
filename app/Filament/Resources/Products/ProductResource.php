@@ -45,7 +45,8 @@ class ProductResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return ProductsTable::configure($table);
+        return ProductsTable::configure($table)
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['images', 'brand']));
     }
 
     public static function getRelations(): array

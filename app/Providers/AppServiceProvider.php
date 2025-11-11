@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\ProductImage;
+use App\Observers\ProductImageObserver;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +21,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Footer pages are now loaded directly in Livewire Footer component
+        // Register observers
+        ProductImage::observe(ProductImageObserver::class);
     }
 }
