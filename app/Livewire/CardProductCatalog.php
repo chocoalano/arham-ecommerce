@@ -97,6 +97,7 @@ class CardProductCatalog extends Component
                 'products.price',
                 'products.sale_price',
                 DB::raw('COALESCE(thumb.path, img.path) as image_path'),
+                DB::raw('COALESCE(thumb.path_ratio_99_119, img.path_ratio_99_119) as image_99_119'),
             ])
             ->selectSub($minVariantPriceSub, 'from_variant_price')
             ->selectSub($avgRatingSub, 'avg_rating')
@@ -116,7 +117,8 @@ class CardProductCatalog extends Component
             'slug' => $row->slug,
             'url' => route('catalog.show', ['slug' => $row->slug]),
             'name' => $row->name,
-            'image'         => $this->toUrl($row->image_path) ?? asset('images/placeholder.jpg'),
+            'image' => $this->toUrl($row->image_path) ?? asset('images/placeholder.jpg'),
+            'image_99_119' => $this->toUrl($row->image_99_119 ?? $row->image_path),
             'price' => $price,
             'sale_price' => $sale,
             'final_price' => $final,

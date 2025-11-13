@@ -110,60 +110,158 @@ class MidtransService
     public function handleNotification(array $notificationData): array
     {
         try {
-            $notification = new \Midtrans\Notification;
+            // Extract data from notification array
+            $orderId = $notificationData['order_id'] ?? null;
+            $statusCode = $notificationData['status_code'] ?? null;
+            $grossAmount = $notificationData['gross_amount'] ?? null;
+            $signatureKey = $notificationData['signature_key'] ?? null;
+            $transactionStatus = $notificationData['transaction_status'] ?? null;
+            $fraudStatus = $notificationData['fraud_status'] ?? null;
+            $paymentType = $notificationData['payment_type'] ?? null;
+            $transactionId = $notificationData['transaction_id'] ?? null;
 
-            $transactionStatus = $notification->transaction_status;
-            $fraudStatus = $notification->fraud_status ?? null;
-            $orderId = $notification->order_id;
-            $paymentType = $notification->payment_type;
+            if (! $orderId || ! $statusCode || ! $grossAmount || ! $signatureKey) {
+                throw new \RuntimeException('Missing required notification fields');
+            }
+
+            // Validate signature key for security
+            $serverKey = config('services.midtrans.server_key');
+            $calculatedSignature = hash('sha512', $orderId.$statusCode.$grossAmount.$serverKey);
+
+            if ($signatureKey !== $calculatedSignature) {
+                \Log::error('Invalid Midtrans signature', [
+                    'order_id' => $orderId,
+                    'received_signature' => $signatureKey,
+                    'calculated_signature' => $calculatedSignature,
+                ]);
+
+                throw new \RuntimeException('Invalid signature key');
+            }
+
+            \Log::info('Valid Midtrans notification received', [
+                'order_id' => $orderId,
+                'transaction_status' => $transactionStatus,
+                'payment_type' => $paymentType,
+            ]);
 
             // Find payment by order_id_ref
             $payment = Payment::where('order_id_ref', $orderId)->firstOrFail();
             $order = $payment->order;
 
-            // Update payment details
-            $payment->update([
+            \Log::info('Processing Midtrans notification', [
+                'order_id' => $orderId,
+                'transaction_status' => $transactionStatus,
+                'fraud_status' => $fraudStatus,
+                'payment_id' => $payment->id,
+            ]);
+
+            // Prepare payment update data
+            $paymentUpdateData = [
+                'midtrans_transaction_id' => $transactionId,
                 'transaction_status' => $transactionStatus,
                 'payment_type' => $paymentType,
                 'fraud_status' => $fraudStatus,
-                'transaction_time' => $notification->transaction_time ?? now(),
+                'transaction_time' => $notificationData['transaction_time'] ?? now(),
                 'raw_response' => $notificationData,
-            ]);
+            ];
+
+            // Add VA numbers if available
+            if (isset($notificationData['va_numbers']) && is_array($notificationData['va_numbers'])) {
+                $paymentUpdateData['va_numbers'] = $notificationData['va_numbers'];
+                if (isset($notificationData['va_numbers'][0]['bank'])) {
+                    $paymentUpdateData['bank'] = $notificationData['va_numbers'][0]['bank'];
+                }
+            }
+
+            // Add Permata VA if available
+            if (isset($notificationData['permata_va_number'])) {
+                $paymentUpdateData['permata_va_number'] = $notificationData['permata_va_number'];
+            }
+
+            // Add bill info if available (for convenience store)
+            if (isset($notificationData['bill_key'])) {
+                $paymentUpdateData['bill_key'] = $notificationData['bill_key'];
+                $paymentUpdateData['biller_code'] = $notificationData['biller_code'] ?? null;
+            }
+
+            // Add masked card if available
+            if (isset($notificationData['masked_card'])) {
+                $paymentUpdateData['masked_card'] = $notificationData['masked_card'];
+            }
+
+            // Add store info if available
+            if (isset($notificationData['store'])) {
+                $paymentUpdateData['store'] = $notificationData['store'];
+            }
 
             // Handle different transaction statuses
-            $status = $this->determineOrderStatus($transactionStatus, $fraudStatus);
+            $orderStatus = $this->determineOrderStatus($transactionStatus, $fraudStatus);
 
-            if ($status) {
-                $order->update(['status' => $status]);
+            if ($orderStatus) {
+                $orderUpdateData = ['status' => $orderStatus];
 
-                // Update payment-specific fields
-                if ($transactionStatus === 'settlement' || $transactionStatus === 'capture') {
-                    $payment->update([
-                        'settlement_time' => now(),
-                    ]);
-                    $order->update([
-                        'paid_at' => now(),
+                // Update payment-specific fields based on status
+                if ($transactionStatus === 'settlement' || ($transactionStatus === 'capture' && $fraudStatus === 'accept')) {
+                    $paymentUpdateData['settlement_time'] = now();
+                    $orderUpdateData['paid_at'] = now();
+
+                    \Log::info('Payment successful, updating order status to paid', [
+                        'order_id' => $orderId,
+                        'order_status' => $orderStatus,
                     ]);
                 } elseif ($transactionStatus === 'cancel' || $transactionStatus === 'deny' || $transactionStatus === 'expire') {
-                    $order->update([
-                        'cancelled_at' => now(),
+                    $orderUpdateData['cancelled_at'] = now();
+
+                    \Log::warning('Payment failed/cancelled', [
+                        'order_id' => $orderId,
+                        'transaction_status' => $transactionStatus,
                     ]);
                 }
+
+                // Update payment first
+                $payment->update($paymentUpdateData);
+
+                // Then update order
+                $order->update($orderUpdateData);
+            } else {
+                // Update payment even if order status is not determined
+                $payment->update($paymentUpdateData);
+
+                \Log::warning('Order status not determined for transaction status', [
+                    'order_id' => $orderId,
+                    'transaction_status' => $transactionStatus,
+                ]);
             }
 
             // Log the payment update
             $payment->logs()->create([
-                'status' => $transactionStatus,
-                'message' => "Midtrans notification received: {$transactionStatus}",
-                'payload' => $notificationData,
+                'order_id' => $order->id,
+                'type' => 'midtrans_notification',
+                'payload' => [
+                    'transaction_status' => $transactionStatus,
+                    'fraud_status' => $fraudStatus,
+                    'payment_type' => $paymentType,
+                    'message' => "Midtrans notification: {$transactionStatus}".($fraudStatus ? " (fraud: {$fraudStatus})" : ''),
+                    'raw_notification' => $notificationData,
+                ],
+                'headers' => request()->headers->all(),
+                'ip_address' => request()->ip(),
+                'occurred_at' => now(),
             ]);
 
             return [
                 'success' => true,
                 'message' => 'Notification processed successfully',
-                'order_status' => $status,
+                'order_status' => $orderStatus,
+                'transaction_status' => $transactionStatus,
             ];
         } catch (\Exception $e) {
+            \Log::error('Midtrans notification handler failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'notification' => $notificationData,
+            ]);
+
             throw new \RuntimeException('Failed to handle notification: '.$e->getMessage());
         }
     }

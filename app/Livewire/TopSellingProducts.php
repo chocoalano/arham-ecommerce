@@ -55,7 +55,7 @@ class TopSellingProducts extends Component
      */
     protected function fetchTopSelling(int $limit, ?int $days, ?int $categoryId, ?string $categorySlug): array
     {
-        $cacheKey = "topselling_v2_l{$limit}_d".($days ?? 'all').'_cid'.($categoryId ?? 'null').'_cslug'.($categorySlug ?? 'null');
+        $cacheKey = "topselling_v3_l{$limit}_d".($days ?? 'all').'_cid'.($categoryId ?? 'null').'_cslug'.($categorySlug ?? 'null');
 
         return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($limit, $days, $categoryId, $categorySlug) {
 
@@ -130,6 +130,7 @@ class TopSellingProducts extends Component
                     'products.price',
                     'products.sale_price',
                     DB::raw('COALESCE(thumb.path, img.path) as image_path'),
+                    DB::raw('COALESCE(thumb.path_ratio_99_119, img.path_ratio_99_119) as image_99_119'),
                     DB::raw('COALESCE(products.created_at) as published_at'),
                     DB::raw('ts.total_qty as total_sold'),
                 ])
@@ -176,6 +177,7 @@ class TopSellingProducts extends Component
                         'products.price',
                         'products.sale_price',
                         DB::raw('COALESCE(thumb.path, img.path) as image_path'),
+                        DB::raw('COALESCE(thumb.path_ratio_99_119, img.path_ratio_99_119) as image_99_119'),
                         DB::raw('COALESCE(products.created_at) as published_at'),
                         DB::raw('0 as total_sold'),
                     ])
@@ -213,6 +215,7 @@ class TopSellingProducts extends Component
                     'name' => $row->name,
                     'desc' => $row->short_description,
                     'image' => $this->toUrl($row->image_path),
+                    'image_99_119' => $this->toUrl($row->image_99_119 ?? $row->image_path),
                     'price' => $price,
                     'sale_price' => $sale,
                     'final_price' => $final,

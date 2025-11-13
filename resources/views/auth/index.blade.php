@@ -651,18 +651,29 @@ function displayOrderDetail(order) {
     document.getElementById('orderDetailContent').innerHTML = html;
 }
 
+// Toast notification helper
+function toast(type, msg) {
+    if (typeof window.showNotification === 'function') {
+        window.showNotification(type, msg);
+    } else if (window.toastr) {
+        window.toastr[type || 'info'](msg || '');
+    } else {
+        alert(`[${type.toUpperCase()}] ${msg}`);
+    }
+}
+
 function payOrder(snapToken) {
     window.snap.pay(snapToken, {
         onSuccess: function(result) {
-            alert('Payment successful!');
+            toast('success', 'Payment successful!');
             location.reload();
         },
         onPending: function(result) {
-            alert('Payment pending. Please complete your payment.');
+            toast('warning', 'Payment pending. Please complete your payment.');
             location.reload();
         },
         onError: function(result) {
-            alert('Payment failed. Please try again.');
+            toast('error', 'Payment failed. Please try again.');
         },
         onClose: function() {
             console.log('Payment popup closed');
@@ -703,7 +714,7 @@ function editAddress(addressId) {
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Failed to load address details.');
+            toast('error', 'Failed to load address details.');
         });
 }
 
@@ -722,15 +733,15 @@ function deleteAddress(addressId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Address deleted successfully!');
+            toast('success', 'Address deleted successfully!');
             location.reload();
         } else {
-            alert('Failed to delete address: ' + (data.message || 'Unknown error'));
+            toast('error', 'Failed to delete address: ' + (data.message || 'Unknown error'));
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while deleting the address.');
+        toast('error', 'An error occurred while deleting the address.');
     });
 }
 
@@ -759,7 +770,7 @@ document.getElementById('addressForm').addEventListener('submit', function(e) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert(data.message);
+            toast('success', data.message);
             location.reload();
         } else {
             if (data.errors) {
@@ -775,13 +786,13 @@ document.getElementById('addressForm').addEventListener('submit', function(e) {
                     }
                 }
             } else {
-                alert('Failed to save address: ' + (data.message || 'Unknown error'));
+                toast('error', 'Failed to save address: ' + (data.message || 'Unknown error'));
             }
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while saving the address.');
+        toast('error', 'An error occurred while saving the address.');
     });
 });
 </script>

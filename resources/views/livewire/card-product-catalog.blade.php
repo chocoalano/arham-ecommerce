@@ -2,7 +2,7 @@
 <div class="ptk-product shop-grid-view-product" data-product-id="{{ (int) $productId }}">
     <div class="image">
         <a href="{{ $p['url'] ?? '#' }}" title="Detail" onclick="return PTK.detail(@json($p['url'] ?? null));">
-            <img width="300" height="360" src="{{ $p['image'] }}" class="img-fluid" alt="{{ $p['name'] }}" loading="lazy">
+            <img width="198" height="238" src="{{ $p['image_99_119'] ?? $p['image'] }}" class="img-fluid" alt="{{ $p['name'] }}" loading="lazy">
         </a>
 
         {{-- Quick view --}}

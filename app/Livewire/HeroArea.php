@@ -36,7 +36,7 @@ class HeroArea extends Component
      */
     protected function fetchSlides(int $limit): array
     {
-        $cacheKey = "hero_slides_v2_{$limit}";
+        $cacheKey = "hero_slides_v3_{$limit}";
 
         return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($limit) {
             // Subquery: gambar pertama (fallback) per product_id
@@ -88,6 +88,10 @@ class HeroArea extends Component
                     'products.price',
                     'products.sale_price',
                     DB::raw('COALESCE(thumb.path, img.path) as image_path'),
+                    DB::raw('COALESCE(thumb.path_ratio_27_28, img.path_ratio_27_28) as image_27_28'),
+                    DB::raw('COALESCE(thumb.path_ratio_108_53, img.path_ratio_108_53) as image_108_53'),
+                    DB::raw('COALESCE(thumb.path_ratio_51_52, img.path_ratio_51_52) as image_51_52'),
+                    DB::raw('COALESCE(thumb.path_ratio_99_119, img.path_ratio_99_119) as image_99_119'),
                     DB::raw('COALESCE(products.created_at) as published_at'),
                 ])
                 ->selectSub($minVariantPriceSub, 'min_variant_price')
@@ -123,6 +127,10 @@ class HeroArea extends Component
                     'name' => $row->name,
                     'desc' => $row->short_description,
                     'image' => $this->toUrl($row->image_path),
+                    'image_27_28' => $this->toUrl($row->image_27_28 ?? $row->image_path),
+                    'image_108_53' => $this->toUrl($row->image_108_53 ?? $row->image_path),
+                    'image_51_52' => $this->toUrl($row->image_51_52 ?? $row->image_path),
+                    'image_99_119' => $this->toUrl($row->image_99_119 ?? $row->image_path),
                     'price' => $productPrice,
                     'sale_price' => $productSale,
                     'final_price' => $productFinal,

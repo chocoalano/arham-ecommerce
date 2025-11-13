@@ -32,7 +32,7 @@
                             </span>
                             <div class="cart-float-single-item-image">
                                 <a href="{{ $item['url'] }}">
-                                    <img width="300" height="360" src="{{ $item['image'] }}" class="img-fluid" alt="{{ $item['name'] }}">
+                                    <img width="198" height="238" src="{{ $item['image'] }}" class="img-fluid" alt="{{ $item['name'] }}" loading="lazy">
                                 </a>
                             </div>
                             <div class="cart-float-single-item-desc">

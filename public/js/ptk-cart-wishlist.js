@@ -26,16 +26,16 @@ window.PTK = window.PTK || (function () {
     };
 
     const notify = (type, message) => {
+        // Try toastr first (most common)
+        if (window.toastr && typeof window.toastr[type] === 'function') {
+            return window.toastr[type](message || '');
+        }
         // Try window.showNotification (custom)
         if (typeof window.showNotification === 'function') {
             return window.showNotification(type, message);
         }
-        // Try toastr
-        if (window.toastr) {
-            return toastr[type || 'info'](message || '');
-        }
-        // Fallback to console
-        console.log(`[${type.toUpperCase()}] ${message}`);
+        // Fallback to alert with type prefix
+        alert(`[${type.toUpperCase()}] ${message}`);
     };
 
     // Broadcast events to update header components

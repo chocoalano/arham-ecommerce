@@ -13,7 +13,7 @@
                                 <div class="tab-pane fade {{ $index === 0 ? 'show active' : '' }}" id="single-slide-{{ $index + 1 }}" role="tabpanel" aria-labelledby="single-slide-tab-{{ $index + 1 }}">
                                     <!--Single Product Image Start-->
                                     <div class="single-product-img img-full">
-                                        <img width="600" height="719" src="{{ asset('storage/' . $image->path) }}" class="img-fluid" alt="{{ $image->alt_text ?? $product->name }}">
+                                        <img width="540" height="560" src="{{ asset('storage/' . ($image->path_ratio_27_28 ?? $image->path)) }}" class="img-fluid" alt="{{ $image->alt_text ?? $product->name }}" loading="lazy">
                                         <a href="{{ asset('storage/' . $image->path) }}" class="big-image-popup"><i class="fa fa-search-plus"></i></a>
                                     </div>
                                     <!--Single Product Image End-->
@@ -37,7 +37,7 @@
                                     @foreach($product->images as $index => $image)
                                         <div class="single-small-image img-full">
                                             <a data-bs-toggle="tab" id="single-slide-tab-{{ $index + 1 }}" href="#single-slide-{{ $index + 1 }}">
-                                                <img width="600" height="719" src="{{ asset('storage/' . $image->path) }}" class="img-fluid" alt="{{ $image->alt_text ?? $product->name }}">
+                                                <img width="255" height="260" src="{{ asset('storage/' . ($image->path_ratio_51_52 ?? $image->path)) }}" class="img-fluid" alt="{{ $image->alt_text ?? $product->name }}" loading="lazy">
                                             </a>
                                         </div>
                                     @endforeach
@@ -306,6 +306,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const csrfToken = '{{ csrf_token() }}';
     const hasVariants = {{ $product->variants->isNotEmpty() ? 'true' : 'false' }};
 
+    // Toast notification helper
+    function toast(type, msg) {
+        if (typeof window.showNotification === 'function') {
+            window.showNotification(type, msg);
+        } else if (window.toastr) {
+            window.toastr[type || 'info'](msg || '');
+        } else {
+            alert(`[${type.toUpperCase()}] ${msg}`);
+        }
+    }
+
     // Quantity controls
     const quantityInput = document.getElementById('product-quantity');
     let maxStock = {{ $product->stock }};
@@ -363,7 +374,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Check if variant is required but not selected
             if (hasVariants && !selectedVariantId) {
-                alert('Please select a product variant first.');
+                toast('warning', 'Please select a product variant first.');
                 return;
             }
 
@@ -405,22 +416,31 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data && data.success) {
                     // Show success message
-                    alert(data.message || 'Product added to cart successfully!');
+                    toast('success', data.message || 'Product added to cart successfully!');
 
                     // Dispatch event to update cart count
                     window.dispatchEvent(new CustomEvent('cartUpdated'));
 
+                    // Also try Livewire events
+                    if (window.Livewire) {
+                        if (typeof window.Livewire.dispatch === 'function') {
+                            window.Livewire.dispatch('cartUpdated');
+                        } else if (typeof window.Livewire.emit === 'function') {
+                            window.Livewire.emit('cartUpdated');
+                        }
+                    }
+
                     // Reset quantity to 1
                     quantityInput.value = 1;
                 } else if (data && data.requires_variant) {
-                    alert('Please select a product variant first.');
+                    toast('warning', 'Please select a product variant first.');
                 } else {
-                    alert(data.message || 'Failed to add product to cart.');
+                    toast('error', data.message || 'Failed to add product to cart.');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred. Please try again.');
+                toast('error', 'An error occurred. Please try again.');
             })
             .finally(() => {
                 // Re-enable button
@@ -472,7 +492,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data && data.success) {
                     // Toggle icon based on action
-                    if (data.action === 'added') {
+                    if (data.action === 'added' || data.in_wishlist) {
                         icon.className = 'fa fa-heart';
                         icon.style.color = '#e74c3c';
                         this.innerHTML = '<i class="fa fa-heart" style="color: #e74c3c;"></i> Remove from wishlist';
@@ -483,18 +503,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
 
                     // Show message
-                    alert(data.message || 'Wishlist updated!');
+                    toast('success', data.message || 'Wishlist updated!');
 
                     // Dispatch event to update wishlist count
                     window.dispatchEvent(new CustomEvent('wishlistUpdated'));
+
+                    // Also try Livewire events
+                    if (window.Livewire) {
+                        if (typeof window.Livewire.dispatch === 'function') {
+                            window.Livewire.dispatch('wishlistUpdated');
+                        } else if (typeof window.Livewire.emit === 'function') {
+                            window.Livewire.emit('wishlistUpdated');
+                        }
+                    }
                 } else {
-                    alert(data.message || 'Failed to update wishlist.');
+                    toast('error', data.message || 'Failed to update wishlist.');
                     icon.className = originalIcon;
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred. Please try again.');
+                toast('error', 'An error occurred. Please try again.');
                 icon.className = originalIcon;
             });
         });

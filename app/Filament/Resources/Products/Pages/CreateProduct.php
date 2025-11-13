@@ -15,6 +15,7 @@ class CreateProduct extends CreateRecord
         $produk = static::getModel()::create($data);
 
         if (! empty($data['images'])) {
+            dd( $data['images']);
             $images = collect($data['images'])
                 ->map(function ($imagePath, $index) {
                     return [

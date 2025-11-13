@@ -56,10 +56,12 @@ class CartWishlistIcons extends Component
                     if ($purchasable instanceof \App\Models\Product) {
                         $image = $purchasable->images->where('is_thumbnail', true)->first()
                             ?? $purchasable->images->first();
+                        $imageUrl = $image?->path_ratio_99_119 ?? $image?->path;
                         $url = route('catalog.show', $purchasable->slug);
                     } else {
                         $image = $purchasable->product->images->where('is_thumbnail', true)->first()
                             ?? $purchasable->product->images->first();
+                        $imageUrl = $image?->path_ratio_99_119 ?? $image?->path;
                         $url = route('catalog.show', $purchasable->product->slug);
                     }
 
@@ -68,7 +70,7 @@ class CartWishlistIcons extends Component
                         'name' => $purchasable->name ?? $purchasable->product->name,
                         'quantity' => $item->quantity,
                         'price' => $price,
-                        'image' => $image ? asset('storage/'.$image->path) : asset('images/no-image.png'),
+                        'image' => $imageUrl ? asset('storage/'.$imageUrl) : asset('images/no-image.png'),
                         'url' => $url,
                     ];
                 })->toArray();
@@ -121,14 +123,14 @@ class CartWishlistIcons extends Component
                         // Dispatch browser event for notification
                         $this->dispatch('notify', [
                             'type' => 'success',
-                            'message' => 'Item removed from cart'
+                            'message' => 'Item removed from cart',
                         ]);
                     }
                 }
             }
         } catch (\Exception $e) {
             // Log error but don't break the UI
-            \Log::error('Error removing cart item: ' . $e->getMessage());
+            \Log::error('Error removing cart item: '.$e->getMessage());
 
             // Refresh cart anyway to sync state
             $this->refreshCart();

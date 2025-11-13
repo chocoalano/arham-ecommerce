@@ -2,8 +2,8 @@
 <div class="ptk-product shop-list-view-product" data-product-id="{{ (int) $productId }}">
     <div class="image">
         <a href="{{ $p['url'] ?? '#' }}" title="Detail" onclick="return PTK.detail(@json($p['url'] ?? null));">
-            <img width="300" height="360"
-                 src="{{ $p['image'] ?? asset('images/placeholder.jpg') }}"
+            <img width="255" height="260"
+                 src="{{ $p['image_51_52'] ?? $p['image'] ?? asset('images/placeholder.jpg') }}"
                  class="img-fluid"
                  alt="{{ $p['name'] ?? 'Product' }}"
                  loading="lazy">

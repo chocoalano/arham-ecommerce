@@ -31,6 +31,14 @@ class ProductForm
                             ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug($state)))
                             ->helperText('Nama produk yang akan ditampilkan kepada pelanggan'),
 
+                        Select::make('category_id')
+                            ->label('Kategori')
+                            ->relationship('categories', 'name')
+                            ->searchable()
+                            ->multiple()
+                            ->preload()
+                            ->helperText('Pilih kategori produk'),
+
                         TextInput::make('slug')
                             ->label('Slug URL')
                             ->required()
@@ -203,25 +211,60 @@ class ProductForm
                             ->schema([
                                 FileUpload::make('path')
                                     ->label('Gambar')
-                                    ->image()
-                                    ->imageEditor()
-                                    ->imageEditorAspectRatios([
-                                        '1:1',
-                                        '4:3',
-                                        '16:9',
-                                    ])
                                     ->directory('products')
                                     ->disk('public')
-                                    ->maxSize(2048)
+                                    ->image()
                                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
-                                    ->downloadable()
-                                    ->openable()
-                                    ->previewable()
-                                    ->helperText('Format: JPG, PNG, WEBP. Maksimal 2MB'),
+                                    ->maxSize(5120)
+                                    ->imageEditor()
+                                    ->imageEditorAspectRatios([
+                                        null,
+                                        '27:28',
+                                        '108:53',
+                                        '51:52',
+                                        '99:119',
+                                    ])
+                                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                        if ($state instanceof \Illuminate\Http\UploadedFile) {
+                                            $imageService = app(\App\Services\ImageProcessingService::class);
+                                            $paths = $imageService->uploadWithRatios($state, 'products', 'public');
+
+                                            $set('path', $paths['original']);
+                                            $set('path_ratio_27_28', $paths['ratio_27_28']);
+                                            $set('path_ratio_108_53', $paths['ratio_108_53']);
+                                            $set('path_ratio_51_52', $paths['ratio_51_52']);
+                                            $set('path_ratio_99_119', $paths['ratio_99_119']);
+                                        }
+                                    })
+                                    ->helperText('Format: JPG, PNG, WEBP. Maksimal 5MB. Akan di-generate 4 ratio berbeda'),
+
+                                TextInput::make('path_ratio_27_28')
+                                    ->label('Ratio 27:28 (540×560)')
+                                    ->disabled()
+                                    ->dehydrated()
+                                    ->helperText('Large banner - Auto-generated'),
+
+                                TextInput::make('path_ratio_108_53')
+                                    ->label('Ratio 108:53 (540×265)')
+                                    ->disabled()
+                                    ->dehydrated()
+                                    ->helperText('Wide banner - Auto-generated'),
+
+                                TextInput::make('path_ratio_51_52')
+                                    ->label('Ratio 51:52 (255×260)')
+                                    ->disabled()
+                                    ->dehydrated()
+                                    ->helperText('Small square - Auto-generated'),
+
+                                TextInput::make('path_ratio_99_119')
+                                    ->label('Ratio 99:119 (198×238)')
+                                    ->disabled()
+                                    ->dehydrated()
+                                    ->helperText('Small portrait - Auto-generated'),
 
                                 TextInput::make('alt_text')
                                     ->label('Teks Alternatif')
-                                    ->maxLength(255)
+                                    ->maxLength(100)
                                     ->helperText('Deskripsi gambar untuk SEO dan aksesibilitas'),
 
                                 Toggle::make('is_thumbnail')

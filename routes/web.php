@@ -104,13 +104,17 @@ Route::name('checkout.')
 
 Route::name('payment.')
     ->prefix('payment')
-    ->middleware(['auth:customer'])
     ->controller(App\Http\Controllers\PaymentController::class)
     ->group(function () {
+        // Webhook from Midtrans (no auth required)
         Route::post('/notification', 'notification')->name('notification');
-        Route::get('/finish/{order_number}', 'finish')->name('finish');
-        Route::get('/unfinish/{order_number}', 'unfinish')->name('unfinish');
-        Route::get('/failed/{order_number}', 'failed')->name('failed');
+
+        // Customer redirect pages (auth required)
+        Route::middleware(['auth:customer'])->group(function () {
+            Route::get('/finish/{order_number}', 'finish')->name('finish');
+            Route::get('/unfinish/{order_number}', 'unfinish')->name('unfinish');
+            Route::get('/failed/{order_number}', 'failed')->name('failed');
+        });
     });
 
 // RajaOngkir API Routes

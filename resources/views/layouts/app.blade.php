@@ -41,6 +41,9 @@
 	<!-- Main CSS -->
 	<link href="{{ asset('css/main.css') }}" rel="stylesheet">
 
+	<!-- Toastr CSS -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+
 	<!-- Modernizer JS -->
 	<script src="{{ asset('js/vendor/modernizr-2.8.3.min.js') }}"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -149,6 +152,31 @@
 	============================================ -->
 	<!-- jQuery JS -->
 	<script src="{{ asset('js/vendor/jquery.min.js') }}"></script>
+
+	<!-- Toastr JS -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+	<script>
+		// Configure Toastr
+		toastr.options = {
+			"closeButton": true,
+			"debug": false,
+			"newestOnTop": true,
+			"progressBar": true,
+			"positionClass": "toast-top-right",
+			"preventDuplicates": false,
+			"onclick": null,
+			"showDuration": "300",
+			"hideDuration": "1000",
+			"timeOut": "5000",
+			"extendedTimeOut": "1000",
+			"showEasing": "swing",
+			"hideEasing": "linear",
+			"showMethod": "fadeIn",
+			"hideMethod": "fadeOut"
+		};
+	</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 	<!-- Popper JS -->
 	<script src="{{ asset('js/popper.min.js') }}"></script>

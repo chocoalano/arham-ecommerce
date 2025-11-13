@@ -11,7 +11,6 @@ use App\Models\Payment;
 use App\Models\PaymentLog;
 use App\Models\Product;
 use App\Models\ProductVariant;
-use App\Models\Shipment;
 use App\Models\ShippingQuote;
 use App\Repositories\Contracts\CheckoutRepositoryInterface;
 use App\Services\MidtransService;
@@ -279,17 +278,37 @@ class CheckoutRepository implements CheckoutRepositoryInterface
             // Hitung total
             $total = $subtotal + $shippingCost;
 
+            // Extract courier and service from shipping code
+            $codeParts = explode('_', $shippingCode, 2);
+            $courier = $codeParts[0] ?? $shippingCode;
+            $service = $codeParts[1] ?? ($chosen['service'] ?? '');
+            $etd = $chosen['etd_days'] ?? '';
+
+            // Calculate total weight
+            $totalWeight = $cart->items->sum(function ($item) {
+                $weight = 0;
+                if ($item->purchasable_type === Product::class && $item->purchasable) {
+                    $weight = $item->purchasable->weight_gram ?? 0;
+                } elseif ($item->purchasable_type === ProductVariant::class && $item->purchasable) {
+                    $weight = $item->purchasable->weight_gram ?? $item->purchasable->product->weight_gram ?? 0;
+                }
+
+                return $weight * $item->quantity;
+            });
+
             // Buat Order
             $orderNumber = $this->generateOrderNumber();
             $order = new Order;
             $order->customer_id = $customerId;
             $order->order_number = $orderNumber;
             $order->currency = 'IDR';
-            $order->status = 'pending'; // awaiting_payment
+            $order->status = 'pending'; // will be updated by payment gateway
             // @phpstan-ignore assign.propertyType
             $order->subtotal = $subtotal;
             // @phpstan-ignore assign.propertyType
             $order->shipping_cost = $shippingCost;
+            // @phpstan-ignore assign.propertyType
+            $order->shipping_total = $shippingCost;
             // @phpstan-ignore assign.propertyType
             $order->discount_total = 0;
             // @phpstan-ignore assign.propertyType
@@ -297,12 +316,49 @@ class CheckoutRepository implements CheckoutRepositoryInterface
             // @phpstan-ignore assign.propertyType
             $order->grand_total = $total;
             $order->notes = $orderNote;
-            // snapshot alamat kirim
+
+            // Customer information
             $order->customer_name = $address->recipient_name;
             $order->customer_email = $address->email;
             $order->customer_phone = $address->phone;
-            $order->billing_address_snapshot = $address->address_line1;
-            $order->shipping_address_snapshot = $address->address_line2;
+
+            // Address references (link to address table)
+            $order->billing_address_id = $address->id;
+            $order->shipping_address_id = $address->id;
+
+            // Address snapshots (for archival purposes)
+            $order->billing_address_snapshot = json_encode([
+                'recipient_name' => $address->recipient_name,
+                'email' => $address->email,
+                'phone' => $address->phone,
+                'address_line1' => $address->address_line1,
+                'address_line2' => $address->address_line2,
+                'province_id' => $address->province_id,
+                'city_id' => $address->city_id,
+                'postal_code' => $address->postal_code,
+            ]);
+            $order->shipping_address_snapshot = json_encode([
+                'recipient_name' => $address->recipient_name,
+                'email' => $address->email,
+                'phone' => $address->phone,
+                'address_line1' => $address->address_line1,
+                'address_line2' => $address->address_line2,
+                'province_id' => $address->province_id,
+                'city_id' => $address->city_id,
+                'postal_code' => $address->postal_code,
+            ]);
+
+            // Shipping information
+            $order->shipping_courier = $courier;
+            $order->shipping_service = $service;
+            $order->shipping_etd = $etd;
+            // @phpstan-ignore assign.propertyType
+            $order->weight_total_gram = $totalWeight;
+
+            // Timestamps
+            $order->placed_at = now();
+            $order->source = 'web';
+
             $order->save();
 
             // Order Items
@@ -332,20 +388,7 @@ class CheckoutRepository implements CheckoutRepositoryInterface
                 ]);
             }
 
-            // Shipment
-            $shipment = new Shipment;
-            $shipment->order_id = $order->id;
-            // Extract courier and service from code (e.g., "TIKI_DAT" -> courier: "TIKI", service: "DAT")
-            $codeParts = explode('_', $chosen['code'], 2);
-            $shipment->courier = $codeParts[0] ?? $chosen['code'];
-            $shipment->service = $codeParts[1] ?? ($chosen['service'] ?? '');
-            $shipment->etd = $chosen['etd_days'] ?? '';
-            // @phpstan-ignore assign.propertyType
-            $shipment->cost = $shippingCost;
-            $shipment->status = 'pending';
-            $shipment->save();
-
-            // Payment
+            // Payment (create payment record)
             $payment = new Payment;
             $payment->order_id = $order->id;
             $payment->customer_id = $customerId;
@@ -353,13 +396,19 @@ class CheckoutRepository implements CheckoutRepositoryInterface
             $payment->gross_amount = $total;
             $payment->currency = 'IDR';
             $payment->transaction_status = 'pending';
+            $payment->provider = $paymentMethod === 'midtrans' ? 'midtrans' : 'manual';
+            $payment->order_id_ref = $orderNumber; // Store order number for Midtrans callback
             $payment->save();
 
             PaymentLog::create([
                 'payment_id' => $payment->id,
                 'status' => 'pending',
-                'message' => 'Payment created',
-                'payload' => ['method' => $paymentMethod],
+                'message' => 'Payment created with method: '.$paymentMethod,
+                'payload' => [
+                    'method' => $paymentMethod,
+                    'amount' => $total,
+                    'currency' => 'IDR',
+                ],
             ]);
 
             // Generate Midtrans Snap Token untuk online payment

@@ -82,37 +82,38 @@
                                 </thead>
                                 <tbody>
                                 @forelse ($items as $it)
-                                    <tr data-item-id="{{ $it['id'] }}"
-                                        data-update-url="{{ route('cart.update', $it['id']) }}"
-                                        data-remove-url="{{ route('cart.destroy', $it['id']) }}">
+                                    <tr data-item-id="{{ $it->id }}"
+                                        data-update-url="{{ route('cart.update', $it->id) }}"
+                                        data-remove-url="{{ route('cart.destroy', $it->id) }}">
                                         <td>
-                                            <a href="{{ $it['url'] }}" class="text-decoration-none">
-                                                <img src="{{ $it['image'] ? asset('storage/'.$it['image']) : asset('images/placeholder.jpg') }}"
-                                                    alt="{{ $it['name'] }}"
+                                            <a href="{{ $it->url }}" class="text-decoration-none">
+                                                <img src="{{ $it->image ? asset('storage/'.$it->image) : asset('images/placeholder.jpg') }}"
+                                                    alt="{{ $it->name }}"
                                                     class="img-fluid rounded"
-                                                    width="64" height="64">
+                                                    width="64" height="64"
+                                                    loading="lazy">
                                             </a>
                                         </td>
                                         <td>
-                                            <a href="{{ $it['url'] }}" class="text-body fw-semibold">{{ $it['name'] }}</a>
+                                            <a href="{{ $it->url }}" class="text-body fw-semibold">{{ $it->name }}</a>
                                             {{-- Menambah fw-semibold agar nama produk lebih menonjol --}}
-                                            @if(!empty($it['sku']))
-                                                <div class="text-muted small">SKU: {{ $it['sku'] }}</div>
+                                            @if(!empty($it->sku))
+                                                <div class="text-muted small">SKU: {{ $it->sku }}</div>
                                             @endif
                                         </td>
                                         <td>
-                                            <div class="fw-bold text-danger">Rp. {{ number_format($it['price'], 0, ',', '.') }}</div>
+                                            <div class="fw-bold text-danger">Rp. {{ number_format($it->price, 0, ',', '.') }}</div>
                                             {{-- Memberikan penekanan warna pada harga --}}
                                         </td>
                                         <td>
                                             <div class="qty-control">
                                                 <button type="button" class="btn btn-outline-secondary btn-sm btn-qty-dec">−</button>
-                                                <input type="number" class="form-control form-control-sm text-center input-qty" min="1" max="999" value="{{ $it['quantity'] }}" style="max-width:64px;">
+                                                <input type="number" class="form-control form-control-sm text-center input-qty" min="1" max="999" value="{{ $it->quantity }}" style="max-width:64px;">
                                                 <button type="button" class="btn btn-outline-secondary btn-sm btn-qty-inc">+</button>
                                             </div>
                                         </td>
                                         <td>
-                                            <div class="row-subtotal fw-bold text-primary">Rp. {{ number_format($it['subtotal'], 0, ',', '.') }}</div>
+                                            <div class="row-subtotal fw-bold text-primary">Rp. {{ number_format($it->subtotal, 0, ',', '.') }}</div>
                                             {{-- Memberikan penekanan warna pada subtotal baris --}}
                                         </td>
                                         <td class="text-end">
