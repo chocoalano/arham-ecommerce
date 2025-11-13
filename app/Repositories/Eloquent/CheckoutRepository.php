@@ -389,26 +389,31 @@ class CheckoutRepository implements CheckoutRepositoryInterface
             }
 
             // Payment (create payment record)
-            $payment = new Payment;
-            $payment->order_id = $order->id;
-            $payment->customer_id = $customerId;
-            // @phpstan-ignore assign.propertyType
-            $payment->gross_amount = $total;
-            $payment->currency = 'IDR';
-            $payment->transaction_status = 'pending';
-            $payment->provider = $paymentMethod === 'midtrans' ? 'midtrans' : 'manual';
-            $payment->order_id_ref = $orderNumber; // Store order number for Midtrans callback
-            $payment->save();
+            $payment = Payment::create([
+                'order_id' => $order->id,
+                'customer_id' => $customerId,
+                'gross_amount' => $total,
+                'currency' => 'IDR',
+                'transaction_status' => 'pending',
+                'provider' => $paymentMethod === 'midtrans' ? 'midtrans' : 'manual',
+                'order_id_ref' => $orderNumber, // Store order number for Midtrans callback
+                'transaction_time' => now(),
+            ]);
 
+            // Log payment creation
             PaymentLog::create([
                 'payment_id' => $payment->id,
-                'status' => 'pending',
-                'message' => 'Payment created with method: '.$paymentMethod,
+                'order_id' => $order->id,
+                'type' => 'payment_created',
                 'payload' => [
                     'method' => $paymentMethod,
                     'amount' => $total,
                     'currency' => 'IDR',
+                    'order_number' => $orderNumber,
+                    'message' => 'Payment created with method: '.$paymentMethod,
                 ],
+                'ip_address' => request()->ip(),
+                'occurred_at' => now(),
             ]);
 
             // Generate Midtrans Snap Token untuk online payment

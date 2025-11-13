@@ -162,8 +162,19 @@ class MidtransService
                 'payment_type' => $paymentType,
                 'fraud_status' => $fraudStatus,
                 'transaction_time' => $notificationData['transaction_time'] ?? now(),
+                'signature_key' => $signatureKey,
                 'raw_response' => $notificationData,
             ];
+
+            // Add expiry time if available
+            if (isset($notificationData['expiry_time'])) {
+                $paymentUpdateData['expiry_time'] = $notificationData['expiry_time'];
+            }
+
+            // Add actions if available
+            if (isset($notificationData['actions']) && is_array($notificationData['actions'])) {
+                $paymentUpdateData['actions'] = $notificationData['actions'];
+            }
 
             // Add VA numbers if available
             if (isset($notificationData['va_numbers']) && is_array($notificationData['va_numbers'])) {
@@ -272,7 +283,7 @@ class MidtransService
     protected function determineOrderStatus(string $transactionStatus, ?string $fraudStatus): ?string
     {
         if ($transactionStatus === 'capture') {
-            return $fraudStatus === 'accept' ? 'processing' : 'pending';
+            return $fraudStatus === 'accept' ? 'paid' : 'pending';
         }
 
         if ($transactionStatus === 'settlement') {

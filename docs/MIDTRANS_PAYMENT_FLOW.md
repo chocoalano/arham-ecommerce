@@ -53,13 +53,16 @@ OrderItem::create([
 Payment::create([
     'order_id' => $order->id,
     'customer_id' => $customerId,
-    'provider' => 'midtrans',
-    'order_id_ref' => 'INV20251113...', // Same as order_number
-    'transaction_status' => 'pending',
     'gross_amount' => 125000,
     'currency' => 'IDR',
+    'transaction_status' => 'pending',
+    'provider' => 'midtrans', // or 'manual', 'cod'
+    'order_id_ref' => 'INV20251113...', // Same as order_number
+    'transaction_time' => now(),
 ])
 ```
+
+**Note:** Other fields (va_numbers, bank, masked_card, etc.) will be filled when Midtrans sends notification.
 
 #### Step 4: Generate Midtrans Snap Token
 ```php
@@ -177,10 +180,17 @@ $payment->update([
     'fraud_status' => $fraudStatus,
     'transaction_time' => now(),
     'settlement_time' => now(), // Only for 'settlement' status
+    'expiry_time' => $expiryTime, // If available
+    'signature_key' => $signatureKey,
     'va_numbers' => [...], // If bank transfer
     'bank' => 'bca', // Bank code
+    'permata_va_number' => '1234567890', // If Permata
+    'bill_key' => 'xxxxx', // If convenience store
+    'biller_code' => 'xxxxx', // If convenience store
     'masked_card' => '411111-1111', // If credit card
-    'raw_response' => $notificationData,
+    'store' => 'indomaret', // If convenience store
+    'actions' => [...], // Payment action links from Midtrans
+    'raw_response' => $notificationData, // Full notification data
 ])
 ```
 
@@ -272,15 +282,41 @@ gross_amount, currency,
 transaction_time, settlement_time, expiry_time,
 va_numbers, permata_va_number, bill_key, biller_code,
 masked_card, bank, store,
-raw_response
+signature_key, actions, raw_response,
+refund_amount, refunded_at
 ```
+
+**Field Details:**
+- `provider`: 'midtrans', 'manual', 'cod'
+- `order_id_ref`: Order number for Midtrans callback lookup
+- `transaction_status`: 'pending', 'settlement', 'capture', 'deny', 'cancel', 'expire'
+- `payment_type`: 'bank_transfer', 'credit_card', 'gopay', 'shopeepay', 'cstore', etc.
+- `fraud_status`: 'accept', 'challenge', 'deny'
+- `transaction_time`: When transaction initiated at Midtrans
+- `settlement_time`: When payment successfully settled
+- `expiry_time`: When payment will expire (for pending payments)
+- `va_numbers`: JSON array of virtual account numbers
+- `permata_va_number`: Specific VA for Permata bank
+- `bill_key` + `biller_code`: Payment code for convenience stores
+- `masked_card`: Masked credit card number (e.g., "411111-1111")
+- `bank`: Bank code (e.g., "bca", "bni", "mandiri")
+- `store`: Store name for convenience store payments
+- `signature_key`: Midtrans signature for validation
+- `actions`: JSON array of payment actions/links from Midtrans
+- `raw_response`: Full JSON response from Midtrans notification
 
 ### Payment Logs Table
 ```sql
-id, payment_id, 
-status, message, payload,
-created_at
+id, payment_id, order_id,
+type, headers, payload, ip_address, occurred_at
 ```
+
+**Field Details:**
+- `type`: 'payment_created', 'midtrans_notification', 'status_update', etc.
+- `headers`: JSON of HTTP request headers
+- `payload`: JSON with detailed information about the event
+- `ip_address`: IP address of the request
+- `occurred_at`: When the event occurred
 
 ## Testing Webhook Locally
 
@@ -300,7 +336,26 @@ https://abc123.ngrok.io/payment/notification
 3. Check logs: `tail -f storage/logs/laravel.log`
 4. Verify payment and order status in database
 
-### 4. Manual Webhook Testing
+### 4. Check Payment Status Manually (Command)
+```bash
+# Interactive mode - will ask for confirmation
+php artisan midtrans:check-status {order_number}
+
+# Auto-update mode - no confirmation needed
+php artisan midtrans:check-status {order_number} --update
+
+# Example
+php artisan midtrans:check-status INV2025111309133307UT --update
+```
+
+**Command will:**
+- Query Midtrans API for current payment status
+- Display payment details in a table
+- Ask if you want to update local database (or auto-update with `--update` flag)
+- Simulate webhook notification and update payment + order status
+- Show success message with updated statuses
+
+### 5. Manual Webhook Testing
 ```bash
 # Simulate Midtrans webhook
 curl -X POST http://localhost:8000/payment/notification \

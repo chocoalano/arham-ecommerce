@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 
 class CheckMidtransPaymentStatus extends Command
 {
-    protected $signature = 'midtrans:check-status {order_number}';
+    protected $signature = 'midtrans:check-status {order_number} {--update : Automatically update payment status without confirmation}';
 
     protected $description = 'Check and update payment status from Midtrans API';
 
@@ -51,8 +51,10 @@ class CheckMidtransPaymentStatus extends Command
                 ]
             );
 
-            // Ask if want to update
-            if ($this->confirm('Do you want to update the local payment record with this status?')) {
+            // Check if auto-update or needs confirmation
+            $shouldUpdate = $this->option('update') || $this->confirm('Do you want to update the local payment record with this status?', true);
+
+            if ($shouldUpdate) {
                 // Simulate notification
                 $notificationData = [
                     'order_id' => $status['order_id'],
