@@ -116,7 +116,7 @@ class FeaturedCategories extends Component
                 'image_108_53' => $this->toUrl($row->prod_image_108_53 ?? $row->effective_image_path),
                 'image_51_52' => $this->toUrl($row->prod_image_51_52 ?? $row->effective_image_path),
                 'image_99_119' => $this->toUrl($row->prod_image_99_119 ?? $row->effective_image_path),
-                'url' => url('/category/'.$row->slug), // ganti ke route() jika punya route name
+                'url' => route('catalog.category', ['slug' => $row->slug]),
             ];
         })->toArray();
     }
