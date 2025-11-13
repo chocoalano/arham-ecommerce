@@ -4,15 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
 
 class PaymentLog extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['payment_id','order_id','type','headers','payload','ip_address','occurred_at'];
+    protected $fillable = ['payment_id', 'order_id', 'type', 'headers', 'payload', 'ip_address', 'occurred_at'];
 
     protected $casts = [
         'headers' => 'array',

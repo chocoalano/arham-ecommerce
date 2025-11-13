@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Repositories\Contracts\WishlistRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Repositories\Contracts\WishlistRepositoryInterface;
 
 class WishlistController extends Controller
 {
@@ -34,8 +34,8 @@ class WishlistController extends Controller
         }
 
         $data = $request->validate([
-            'product_id' => ['nullable','integer','exists:products,id','required_without:variant_id'],
-            'variant_id' => ['nullable','integer','exists:product_variants,id'],
+            'product_id' => ['nullable', 'integer', 'exists:products,id', 'required_without:variant_id'],
+            'variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
         ]);
 
         $customerId = (int) Auth::guard('customer')->id();
@@ -70,7 +70,7 @@ class WishlistController extends Controller
         }
 
         $data = $request->validate([
-            'variant_id' => ['nullable','integer','exists:product_variants,id'],
+            'variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
         ]);
 
         $customerId = (int) Auth::guard('customer')->id();
@@ -100,9 +100,10 @@ class WishlistController extends Controller
             return response()->json(['count' => 0, 'authenticated' => false]);
         }
         $customerId = (int) Auth::guard('customer')->id();
+
         return response()->json([
             'count' => $this->repo->count($customerId),
-            'authenticated' => true
+            'authenticated' => true,
         ]);
     }
 }

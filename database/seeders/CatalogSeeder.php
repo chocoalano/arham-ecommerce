@@ -2,9 +2,13 @@
 
 namespace Database\Seeders;
 
+use App\Models\Brand;
+use App\Models\Product;
+use App\Models\ProductCategory;
+use App\Models\ProductImage;
+use App\Models\ProductVariant;
+use App\Models\Voucher;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
-use App\Models\{Brand,ProductCategory,Product,ProductImage,ProductVariant,Voucher};
 
 class CatalogSeeder extends Seeder
 {
@@ -16,7 +20,7 @@ class CatalogSeeder extends Seeder
         // Categories (parents + children)
         $parents = ProductCategory::factory()->count(5)->create();
         foreach ($parents as $parent) {
-            ProductCategory::factory()->count(rand(2,4))->create(['parent_id' => $parent->id]);
+            ProductCategory::factory()->count(rand(2, 4))->create(['parent_id' => $parent->id]);
         }
 
         // Vouchers
@@ -31,8 +35,10 @@ class CatalogSeeder extends Seeder
 
             // Attach 1-3 categories (child if exists else parent)
             $cats = $allCategories->whereNotNull('parent_id');
-            if ($cats->isEmpty()) $cats = $allCategories;
-            $product->categories()->sync($cats->random(rand(1,3))->pluck('id')->toArray());
+            if ($cats->isEmpty()) {
+                $cats = $allCategories;
+            }
+            $product->categories()->sync($cats->random(rand(1, 3))->pluck('id')->toArray());
 
             // Images: 1 thumbnail + 1-3 gallery
             $thumb = ProductImage::factory()->create([
@@ -40,8 +46,8 @@ class CatalogSeeder extends Seeder
                 'is_thumbnail' => true,
                 'sort_order' => 0,
             ]);
-            $count = rand(1,3);
-            for ($i=1; $i<=$count; $i++) {
+            $count = rand(1, 3);
+            for ($i = 1; $i <= $count; $i++) {
                 ProductImage::factory()->create([
                     'product_id' => $product->id,
                     'sort_order' => $i,
@@ -49,8 +55,8 @@ class CatalogSeeder extends Seeder
             }
 
             // Variants: 0-3
-            $variantCount = rand(0,3);
-            for ($i=0; $i<$variantCount; $i++) {
+            $variantCount = rand(0, 3);
+            for ($i = 0; $i < $variantCount; $i++) {
                 ProductVariant::factory()->create([
                     'product_id' => $product->id,
                 ]);

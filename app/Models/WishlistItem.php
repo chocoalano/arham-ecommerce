@@ -7,12 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
-
 class WishlistItem extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['wishlist_id','purchasable_type','purchasable_id','notes','price_at_addition'];
+    protected $fillable = ['wishlist_id', 'purchasable_type', 'purchasable_id', 'notes', 'price_at_addition'];
 
     protected $casts = [
         'price_at_addition' => 'decimal:2',

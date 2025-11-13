@@ -7,12 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-
 class Wishlist extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['customer_id','name'];
+    protected $fillable = ['customer_id', 'name'];
 
     public function customer(): BelongsTo
     {

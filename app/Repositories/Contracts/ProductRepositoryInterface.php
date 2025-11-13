@@ -2,6 +2,7 @@
 
 namespace App\Repositories\Contracts;
 
+use App\Models\Product;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
@@ -32,4 +33,6 @@ interface ProductRepositoryInterface
      * Returns: ['min' => float, 'max' => float]
      */
     public function priceRange(?array $filters = []): array;
+
+    public function findBySlug(string $slug): ?Product;
 }

@@ -9,12 +9,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-
 class ProductCategory extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['parent_id','name','slug','description','image_path','is_active','sort_order','meta'];
+    protected $fillable = ['parent_id', 'name', 'slug', 'description', 'image_path', 'is_active', 'sort_order', 'meta'];
 
     protected $casts = [
         'is_active' => 'boolean',

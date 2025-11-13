@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Page;
+use App\Models\ProductCategory;
 use Livewire\Component;
 
 class Footer extends Component
@@ -18,16 +19,12 @@ class Footer extends Component
         // Footer blocks
         $this->footerBlocks = [
             [
-                'title' => 'Need Help?',
+                'title' => 'Butuh bantuan?',
                 'content' => 'Call: 1-800-345-6789',
             ],
             [
-                'title' => 'Products & Sales',
+                'title' => 'Produk & Penjualan',
                 'content' => 'Call: 1-877-345-6789',
-            ],
-            [
-                'title' => 'Check Order Status',
-                'content' => '<a href="'.route('auth.index').'">Click here</a> to check Order Status.',
             ],
         ];
 
@@ -72,13 +69,13 @@ class Footer extends Component
         $footerPages = Page::footer()->get();
 
         // Group pages by category (you can customize this)
-        $productsLinks = [
-            ['label' => 'Prices Drop', 'url' => route('catalog.index')],
-            ['label' => 'New Products', 'url' => route('catalog.index')],
-            ['label' => 'Best Sales', 'url' => route('catalog.index')],
-            ['label' => 'Contact Us', 'url' => route('page.show', 'contact')],
-            ['label' => 'My Account', 'url' => route('auth.index')],
-        ];
+        $kategoriData = ProductCategory::whereIsActive(true)->take(5)->get();
+        $productsLinks = $kategoriData->map(function ($kategori) {
+            return [
+                'label' => $kategori->name,
+                'url' => route('catalog.index', ['category'=>$kategori->slug]),
+            ];
+        })->toArray();
 
         // Company links from Pages model
         $companyLinks = $footerPages->map(function ($page) {

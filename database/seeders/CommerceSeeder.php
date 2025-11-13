@@ -2,9 +2,20 @@
 
 namespace Database\Seeders;
 
+use App\Models\Address;
+use App\Models\Cart;
+use App\Models\CartItem;
+use App\Models\Customer;
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Payment;
+use App\Models\PaymentLog;
+use App\Models\Product;
+use App\Models\ProductVariant;
+use App\Models\Shipment;
+use App\Models\ShippingQuote;
+use App\Models\Voucher;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Arr;
-use App\Models\{Cart,CartItem,ShippingQuote,Customer,Address,Voucher,Order,OrderItem,Payment,PaymentLog,Shipment,Product,ProductVariant};
 
 class CommerceSeeder extends Seeder
 {
@@ -18,15 +29,15 @@ class CommerceSeeder extends Seeder
             $cart = Cart::factory()->create([
                 'customer_id' => $c->id,
                 'address_id' => Address::where('customer_id', $c->id)->inRandomOrder()->value('id'),
-                'voucher_id' => $vouchers->isNotEmpty() && rand(0,1) ? $vouchers->first()->id : null,
+                'voucher_id' => $vouchers->isNotEmpty() && rand(0, 1) ? $vouchers->first()->id : null,
             ]);
 
             $itemsCount = rand(1, 4);
-            for ($i=0; $i<$itemsCount; $i++) {
-                if (rand(0,1) && ProductVariant::count() > 0) {
+            for ($i = 0; $i < $itemsCount; $i++) {
+                if (rand(0, 1) && ProductVariant::count() > 0) {
                     $v = ProductVariant::inRandomOrder()->first();
                     $price = $v->effectivePrice();
-                    $qty = rand(1,3);
+                    $qty = rand(1, 3);
                     CartItem::factory()->create([
                         'cart_id' => $cart->id,
                         'purchasable_type' => ProductVariant::class,
@@ -41,7 +52,7 @@ class CommerceSeeder extends Seeder
                 } else {
                     $p = Product::inRandomOrder()->first();
                     $price = $p->effective_price;
-                    $qty = rand(1,3);
+                    $qty = rand(1, 3);
                     CartItem::factory()->create([
                         'cart_id' => $cart->id,
                         'purchasable_type' => Product::class,
@@ -57,7 +68,7 @@ class CommerceSeeder extends Seeder
             }
 
             // Add a couple of shipping quotes
-            foreach (range(1, rand(1,3)) as $_) {
+            foreach (range(1, rand(1, 3)) as $_) {
                 ShippingQuote::factory()->create([
                     'cart_id' => $cart->id,
                     'address_id' => $cart->address_id,
@@ -69,13 +80,15 @@ class CommerceSeeder extends Seeder
         $carts = Cart::inRandomOrder()->take(7)->get();
         foreach ($carts as $cart) {
             $items = $cart->items;
-            if ($items->isEmpty()) continue;
+            if ($items->isEmpty()) {
+                continue;
+            }
 
             $subtotal = $items->sum('subtotal');
             $discount = 0;
             if ($cart->voucher) {
                 if ($cart->voucher->type === 'percent') {
-                    $discount = min($subtotal * ($cart->voucher->value / 100), (float)($cart->voucher->max_discount ?? $subtotal));
+                    $discount = min($subtotal * ($cart->voucher->value / 100), (float) ($cart->voucher->max_discount ?? $subtotal));
                 } elseif ($cart->voucher->type === 'fixed') {
                     $discount = min($cart->voucher->value, $subtotal);
                 }

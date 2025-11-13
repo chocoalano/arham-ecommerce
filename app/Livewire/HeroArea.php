@@ -2,16 +2,15 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Storage;
-
-// Models
 use App\Models\Product;
 use App\Models\ProductImage;
-use App\Models\ProductVariant;
 use App\Models\ProductReview;
+use App\Models\ProductVariant;
+// Models
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Component;
 
 class HeroArea extends Component
 {
@@ -69,7 +68,7 @@ class HeroArea extends Component
                 // Join thumbnail
                 ->leftJoin('product_images as thumb', function ($join) {
                     $join->on('thumb.product_id', '=', 'products.id')
-                         ->where('thumb.is_thumbnail', '=', 1);
+                        ->where('thumb.is_thumbnail', '=', 1);
                 })
                 // Join subquery min sort_order, lalu join image fallback berdasar min_sort
                 ->leftJoinSub($firstImageSub, 'fi', function ($join) {
@@ -77,7 +76,7 @@ class HeroArea extends Component
                 })
                 ->leftJoin('product_images as img', function ($join) {
                     $join->on('img.product_id', '=', 'products.id')
-                         ->on('img.sort_order', '=', 'fi.min_sort');
+                        ->on('img.sort_order', '=', 'fi.min_sort');
                 })
                 ->where('products.status', 'active')
                 ->where('products.is_featured', true)
@@ -101,13 +100,13 @@ class HeroArea extends Component
             return $rows->map(function ($row) {
                 // Harga produk (bukan varian)
                 $productPrice = (float) ($row->price ?? 0);
-                $productSale  = $row->sale_price !== null ? (float) $row->sale_price : null;
+                $productSale = $row->sale_price !== null ? (float) $row->sale_price : null;
                 $productFinal = ($productSale !== null && $productSale > 0 && $productSale < $productPrice)
                     ? $productSale
                     : $productPrice;
 
                 // Harga varian termurah (jika ada & aktif)
-                $variantFrom  = $row->min_variant_price !== null ? (float) $row->min_variant_price : null;
+                $variantFrom = $row->min_variant_price !== null ? (float) $row->min_variant_price : null;
 
                 // Diskon (%) dihitung dari level product saja (bukan varian)
                 $discountPct = ($productSale !== null && $productSale > 0 && $productSale < $productPrice)
@@ -115,23 +114,23 @@ class HeroArea extends Component
                     : null;
 
                 // Rating & jumlah ulasan
-                $avgRating    = $row->avg_rating !== null ? round((float) $row->avg_rating, 1) : null;
+                $avgRating = $row->avg_rating !== null ? round((float) $row->avg_rating, 1) : null;
                 $reviewsCount = (int) ($row->reviews_count ?? 0);
 
                 return [
-                    'id'               => $row->id,
-                    'slug'             => $row->slug,
-                    'name'             => $row->name,
-                    'desc'             => $row->short_description,
-                    'image'            => $this->toUrl($row->image_path),
-                    'price'            => $productPrice,
-                    'sale_price'       => $productSale,
-                    'final_price'      => $productFinal,
-                    'from_variant'     => $variantFrom, // "mulai dari" jika varian ada
+                    'id' => $row->id,
+                    'slug' => $row->slug,
+                    'name' => $row->name,
+                    'desc' => $row->short_description,
+                    'image' => $this->toUrl($row->image_path),
+                    'price' => $productPrice,
+                    'sale_price' => $productSale,
+                    'final_price' => $productFinal,
+                    'from_variant' => $variantFrom, // "mulai dari" jika varian ada
                     'discount_percent' => $discountPct,
-                    'rating_avg'       => $avgRating,
-                    'rating_count'     => $reviewsCount,
-                    'product_url'      => route('catalog.show', ['slug' => $row->slug])
+                    'rating_avg' => $avgRating,
+                    'rating_count' => $reviewsCount,
+                    'product_url' => route('catalog.show', ['slug' => $row->slug]),
                 ];
             })->toArray();
         });
@@ -140,7 +139,7 @@ class HeroArea extends Component
     /** Ubah path penyimpanan ke URL publik (disk/public atau absolute), fallback placeholder */
     protected function toUrl(?string $path): string
     {
-        if (!$path || trim((string) $path) === '') {
+        if (! $path || trim((string) $path) === '') {
             return asset('images/placeholder.jpg');
         }
         if (preg_match('~^https?://~i', $path)) {

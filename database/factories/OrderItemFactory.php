@@ -13,6 +13,7 @@ class OrderItemFactory extends Factory
     {
         $price = $this->faker->randomFloat(2, 8000, 300000);
         $qty = $this->faker->numberBetween(1, 4);
+
         return [
             'sku' => strtoupper($this->faker->bothify('ORD-####-??')),
             'name' => ucfirst($this->faker->words(3, true)),

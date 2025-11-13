@@ -2,8 +2,13 @@
 
 namespace Database\Seeders;
 
+use App\Models\Address;
+use App\Models\Customer;
+use App\Models\Product;
+use App\Models\ProductVariant;
+use App\Models\Wishlist;
+use App\Models\WishlistItem;
 use Illuminate\Database\Seeder;
-use App\Models\{Customer,Address,Wishlist,WishlistItem,Product,ProductVariant};
 
 class CustomerSeeder extends Seeder
 {
@@ -21,8 +26,8 @@ class CustomerSeeder extends Seeder
 
             // Wishlist items (mix product/variant)
             $loop = rand(1, 4);
-            for ($i=0; $i<$loop; $i++) {
-                if (rand(0,1) && ProductVariant::count() > 0) {
+            for ($i = 0; $i < $loop; $i++) {
+                if (rand(0, 1) && ProductVariant::count() > 0) {
                     $v = ProductVariant::inRandomOrder()->first();
                     WishlistItem::factory()->create([
                         'wishlist_id' => $wishlist->id,

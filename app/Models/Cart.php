@@ -7,13 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-
 class Cart extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'customer_id','session_id','currency','address_id','voucher_id','expires_at','meta'
+        'customer_id', 'session_id', 'currency', 'address_id', 'voucher_id', 'expires_at', 'meta',
     ];
 
     protected $casts = [

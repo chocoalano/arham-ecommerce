@@ -8,8 +8,8 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Wishlist;
 use App\Models\WishlistItem;
-use Illuminate\Support\Facades\DB;
 use App\Repositories\Contracts\CartRepositoryInterface;
+use Illuminate\Support\Facades\DB;
 
 class CartRepository implements CartRepositoryInterface
 {
@@ -29,7 +29,9 @@ class CartRepository implements CartRepositoryInterface
     public function countItems(int $customerId): int
     {
         $cart = $this->getByCustomerId($customerId);
-        if (!$cart) return 0;
+        if (! $cart) {
+            return 0;
+        }
 
         return (int) CartItem::where('cart_id', $cart->id)->sum('quantity');
     }
@@ -37,7 +39,7 @@ class CartRepository implements CartRepositoryInterface
     public function getSummary(int $customerId): array
     {
         $cart = $this->getByCustomerId($customerId, ['items.purchasable']);
-        if (!$cart) {
+        if (! $cart) {
             return [
                 'items' => [],
                 'total_items' => 0,
@@ -49,14 +51,14 @@ class CartRepository implements CartRepositoryInterface
 
         $items = $cart->items->map(function (CartItem $item) {
             return [
-                'id'               => $item->id,
-                'sku'              => $item->sku,
-                'name'             => $item->name,
-                'quantity'         => (int) $item->quantity,
-                'price'            => (float) $item->price,
-                'subtotal'         => (float) $item->subtotal,
+                'id' => $item->id,
+                'sku' => $item->sku,
+                'name' => $item->name,
+                'quantity' => (int) $item->quantity,
+                'price' => (float) $item->price,
+                'subtotal' => (float) $item->subtotal,
                 'purchasable_type' => $item->purchasable_type,
-                'purchasable_id'   => $item->purchasable_id,
+                'purchasable_id' => $item->purchasable_id,
             ];
         })->values();
 
@@ -67,7 +69,7 @@ class CartRepository implements CartRepositoryInterface
             'items' => $items,
             'total_items' => $total,
             'subtotal' => $subtotal,
-            'formatted_subtotal' => 'Rp ' . number_format($subtotal, 0, ',', '.'),
+            'formatted_subtotal' => 'Rp '.number_format($subtotal, 0, ',', '.'),
             'cart_id' => $cart->id,
         ];
     }
@@ -79,7 +81,7 @@ class CartRepository implements CartRepositoryInterface
             ->where('is_active', true);
         $cek = $hasVariants->exists();
 
-        if ($cek && !$variantId) {
+        if ($cek && ! $variantId) {
             $variantId = $hasVariants->first()->id;
         }
 
@@ -94,11 +96,11 @@ class CartRepository implements CartRepositoryInterface
                     ->firstOrFail();
 
                 $purchasableType = ProductVariant::class;
-                $purchasableId   = $variantId;
-                $price           = (float) ($variant->sale_price ?? $variant->price ?? 0);
-                $sku             = $variant->sku ?? '';
-                $name            = ($variant->product->name ?? '') . ' - ' . ($variant->name ?? '');
-                $weightGram      = $variant->weight_gram ?? $variant->product->weight_gram ?? 0;
+                $purchasableId = $variantId;
+                $price = (float) ($variant->sale_price ?? $variant->price ?? 0);
+                $sku = $variant->sku ?? '';
+                $name = ($variant->product->name ?? '').' - '.($variant->name ?? '');
+                $weightGram = $variant->weight_gram ?? $variant->product->weight_gram ?? 0;
 
                 if (isset($variant->stock_quantity) && $variant->stock_quantity < $quantity) {
                     throw new \RuntimeException('Stok tidak mencukupi');
@@ -107,12 +109,12 @@ class CartRepository implements CartRepositoryInterface
                 $product = Product::findOrFail($productId);
 
                 $purchasableType = Product::class;
-                $purchasableId   = $productId;
-                $price           = (float) (($product->sale_price && $product->sale_price < $product->price)
+                $purchasableId = $productId;
+                $price = (float) (($product->sale_price && $product->sale_price < $product->price)
                     ? $product->sale_price
                     : $product->price);
-                $sku        = $product->sku ?? '';
-                $name       = $product->name;
+                $sku = $product->sku ?? '';
+                $name = $product->name;
                 $weightGram = $product->weight_gram ?? 0;
 
                 if (isset($product->stock_quantity) && $product->stock_quantity < $quantity) {
@@ -130,33 +132,33 @@ class CartRepository implements CartRepositoryInterface
                 $newQty = $item->quantity + $quantity;
                 $item->update([
                     'quantity' => $newQty,
-                    'price'    => $price,
+                    'price' => $price,
                     'subtotal' => $price * $newQty,
                 ]);
 
-                $action  = 'updated';
+                $action = 'updated';
                 $message = 'Jumlah produk di keranjang diperbarui';
             } else {
                 CartItem::create([
-                    'cart_id'          => $cart->id,
+                    'cart_id' => $cart->id,
                     'purchasable_type' => $purchasableType,
-                    'purchasable_id'   => $purchasableId,
-                    'sku'              => $sku,
-                    'name'             => $name,
-                    'weight_gram'      => $weightGram,
-                    'quantity'         => $quantity,
-                    'price'            => $price,
-                    'subtotal'         => $price * $quantity,
+                    'purchasable_id' => $purchasableId,
+                    'sku' => $sku,
+                    'name' => $name,
+                    'weight_gram' => $weightGram,
+                    'quantity' => $quantity,
+                    'price' => $price,
+                    'subtotal' => $price * $quantity,
                 ]);
 
-                $action  = 'added';
+                $action = 'added';
                 $message = 'Produk berhasil ditambahkan ke keranjang';
             }
 
             return [
                 'success' => true,
                 'message' => $message,
-                'action'  => $action,
+                'action' => $action,
                 'cart_id' => $cart->id,
             ];
         });
@@ -166,9 +168,9 @@ class CartRepository implements CartRepositoryInterface
 
         return array_merge($result, [
             'cart_summary' => [
-                'total_items'       => $summary['total_items'],
-                'subtotal'          => $summary['subtotal'],
-                'formatted_subtotal'=> $summary['formatted_subtotal'],
+                'total_items' => $summary['total_items'],
+                'subtotal' => $summary['subtotal'],
+                'formatted_subtotal' => $summary['formatted_subtotal'],
             ],
         ]);
     }
@@ -190,14 +192,14 @@ class CartRepository implements CartRepositoryInterface
                 'success' => true,
                 'message' => 'Jumlah item diperbarui',
                 'item' => [
-                    'id'                 => $item->id,
-                    'quantity'           => (int) $item->quantity,
-                    'subtotal'           => (float) $item->subtotal,
-                    'formatted_subtotal' => 'Rp ' . number_format($item->subtotal, 0, ',', '.'),
+                    'id' => $item->id,
+                    'quantity' => (int) $item->quantity,
+                    'subtotal' => (float) $item->subtotal,
+                    'formatted_subtotal' => 'Rp '.number_format($item->subtotal, 0, ',', '.'),
                 ],
                 'cart' => [
-                    'total_items'        => $summary['total_items'],
-                    'subtotal'           => $summary['subtotal'],
+                    'total_items' => $summary['total_items'],
+                    'subtotal' => $summary['subtotal'],
                     'formatted_subtotal' => $summary['formatted_subtotal'],
                 ],
             ];
@@ -218,8 +220,8 @@ class CartRepository implements CartRepositoryInterface
                 'success' => true,
                 'message' => 'Item berhasil dihapus dari keranjang',
                 'cart' => [
-                    'total_items'        => $summary['total_items'],
-                    'subtotal'           => $summary['subtotal'],
+                    'total_items' => $summary['total_items'],
+                    'subtotal' => $summary['subtotal'],
                     'formatted_subtotal' => $summary['formatted_subtotal'],
                 ],
             ];
@@ -255,8 +257,9 @@ class CartRepository implements CartRepositoryInterface
 
             $add = $this->addItem($customerId, (int) $productId, $variantId, 1);
 
-            if (!empty($add['success'])) {
+            if (! empty($add['success'])) {
                 $wishlistItem->delete();
+
                 return [
                     'success' => true,
                     'message' => 'Item dipindahkan ke keranjang',

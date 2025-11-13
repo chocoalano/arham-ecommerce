@@ -2,32 +2,33 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use Throwable;
-
-// Models
 use App\Models\Product;
-use App\Models\ProductVariant;
 use App\Models\ProductImage;
 use App\Models\ProductReview;
-use App\Models\Cart;
-use App\Models\CartItem;
-use App\Models\Wishlist;
-use App\Models\WishlistItem;
+use App\Models\ProductVariant;
+// Models
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Component;
+use Throwable;
 
 class CardProductCatalog extends Component
 {
     public int $productId;
+
     public array $p = [];
+
     public int $qty = 1;
+
     public bool $inWishlist = false;
+
     public bool $showActions = true;
+
     public ?int $variantId = null;
 
     // Properties untuk notification
     public string $notificationMessage = '';
+
     public string $notificationType = '';
 
     public function mount(
@@ -37,17 +38,16 @@ class CardProductCatalog extends Component
         bool $showActions = true,
         ?int $variantId = null
     ): void {
-        $this->productId   = $productId;
-        $this->qty         = max(1, $qty);
-        $this->inWishlist  = $inWishlist;
+        $this->productId = $productId;
+        $this->qty = max(1, $qty);
+        $this->inWishlist = $inWishlist;
         $this->showActions = $showActions;
-        $this->variantId   = $variantId;
+        $this->variantId = $variantId;
 
         $this->p = $this->buildCardData($this->productId);
     }
 
     /** === Actions === */
-
     public function goToDetail(): void
     {
         $url = $this->p['url'] ?? route('catalog.show', ['slug' => $this->p['slug'] ?? null]);
@@ -55,7 +55,6 @@ class CardProductCatalog extends Component
     }
 
     /** === Helpers === */
-
     protected function buildCardData(int $id): array
     {
         $minSortPerProduct = ProductImage::query()
@@ -82,12 +81,12 @@ class CardProductCatalog extends Component
         $row = Product::query()
             ->leftJoin('product_images as thumb', function ($join) {
                 $join->on('thumb.product_id', '=', 'products.id')
-                     ->where('thumb.is_thumbnail', '=', 1);
+                    ->where('thumb.is_thumbnail', '=', 1);
             })
             ->leftJoinSub($minSortPerProduct, 'ms', fn ($join) => $join->on('ms.product_id', '=', 'products.id'))
             ->leftJoin('product_images as img', function ($join) {
                 $join->on('img.product_id', '=', 'products.id')
-                     ->on('img.sort_order', '=', 'ms.min_sort');
+                    ->on('img.sort_order', '=', 'ms.min_sort');
             })
             ->where('products.id', $id)
             ->select([
@@ -105,7 +104,7 @@ class CardProductCatalog extends Component
             ->firstOrFail();
 
         $price = (float) ($row->price ?? 0);
-        $sale  = $row->sale_price !== null ? (float) $row->sale_price : null;
+        $sale = $row->sale_price !== null ? (float) $row->sale_price : null;
         $final = ($sale !== null && $sale > 0 && $sale < $price) ? $sale : $price;
         $discount = ($sale !== null && $sale > 0 && $sale < $price)
             ? (int) round((($price - $sale) / max(1, $price)) * 100)
@@ -113,26 +112,26 @@ class CardProductCatalog extends Component
         $fromVariant = $row->from_variant_price !== null ? (float) $row->from_variant_price : null;
 
         return [
-            'id'            => $row->id,
-            'slug'          => $row->slug,
-            'url'           => route('catalog.show', ['slug' => $row->slug]),
-            'name'          => $row->name,
+            'id' => $row->id,
+            'slug' => $row->slug,
+            'url' => route('catalog.show', ['slug' => $row->slug]),
+            'name' => $row->name,
             // 'image'         => $this->toUrl($row->image_path),
-            'image'         => asset('images/placeholder.jpg'),
-            'price'         => $price,
-            'sale_price'    => $sale,
-            'final_price'   => $final,
-            'from_variant'  => $fromVariant,
-            'discount'      => $discount,
-            'rating_avg'    => $row->avg_rating !== null ? round((float) $row->avg_rating, 1) : null,
-            'rating_count'  => (int) ($row->reviews_count ?? 0),
-            'is_new'        => false,
+            'image' => asset('images/placeholder.jpg'),
+            'price' => $price,
+            'sale_price' => $sale,
+            'final_price' => $final,
+            'from_variant' => $fromVariant,
+            'discount' => $discount,
+            'rating_avg' => $row->avg_rating !== null ? round((float) $row->avg_rating, 1) : null,
+            'rating_count' => (int) ($row->reviews_count ?? 0),
+            'is_new' => false,
         ];
     }
 
     protected function toUrl(?string $path): string
     {
-        if (!$path || trim((string)$path) === '') {
+        if (! $path || trim((string) $path) === '') {
             return asset('images/placeholder.jpg');
         }
         if (preg_match('~^https?://~i', $path)) {

@@ -3,7 +3,6 @@
 namespace App\Repositories\Contracts;
 
 use App\Models\Cart;
-use Illuminate\Support\Collection;
 
 interface CartRepositoryInterface
 {

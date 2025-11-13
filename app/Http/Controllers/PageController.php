@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Page;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class PageController extends Controller
@@ -19,7 +18,6 @@ class PageController extends Controller
 
         // Determine which view to use based on template
         $view = match ($page->template) {
-            'about' => 'pages.about',
             'faq' => 'pages.faq',
             'contact' => 'pages.contact',
             default => 'pages.default',

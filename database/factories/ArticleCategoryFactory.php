@@ -13,10 +13,11 @@ class ArticleCategoryFactory extends Factory
     public function definition(): array
     {
         $name = ucfirst($this->faker->unique()->words(2, true));
+
         return [
             'parent_id' => null,
             'name' => $name,
-            'slug' => Str::slug($name) . '-' . Str::random(4),
+            'slug' => Str::slug($name).'-'.Str::random(4),
             'description' => $this->faker->optional()->sentence(8),
             'sort_order' => $this->faker->numberBetween(0, 20),
         ];

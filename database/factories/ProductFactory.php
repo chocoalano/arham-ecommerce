@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Models\Product;
-use App\Models\Brand;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -14,10 +13,11 @@ class ProductFactory extends Factory
     public function definition(): array
     {
         $name = ucfirst($this->faker->unique()->words(3, true));
+
         return [
             'sku' => strtoupper(Str::random(10)),
             'name' => $name,
-            'slug' => Str::slug($name) . '-' . Str::random(5),
+            'slug' => Str::slug($name).'-'.Str::random(5),
             'brand_id' => null,
             'short_description' => $this->faker->optional()->sentence(12),
             'description' => $this->faker->optional()->paragraph(4),
@@ -29,7 +29,7 @@ class ProductFactory extends Factory
             'sale_price' => $this->faker->optional(0.35)->randomFloat(2, 8000, 400000),
             'is_featured' => $this->faker->boolean(10),
             'status' => 'active',
-            'attributes' => ['flavor' => $this->faker->randomElement(['matcha','red velvet','taro','chocolate','vanilla'])],
+            'attributes' => ['flavor' => $this->faker->randomElement(['matcha', 'red velvet', 'taro', 'chocolate', 'vanilla'])],
             'currency' => 'IDR',
             'meta_title' => $this->faker->optional()->sentence(3),
             'meta_description' => $this->faker->optional()->sentence(8),

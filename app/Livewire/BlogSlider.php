@@ -2,11 +2,11 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
+use App\Models\Article;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use App\Models\Article;
+use Livewire\Component;
 
 class BlogSlider extends Component
 {
@@ -21,9 +21,9 @@ class BlogSlider extends Component
 
     public function mount(int $limit = 6, bool $onlyPublished = true): void
     {
-        $this->limit         = $limit;
+        $this->limit = $limit;
         $this->onlyPublished = $onlyPublished;
-        $this->posts         = $this->fetchPosts($this->limit, $this->onlyPublished);
+        $this->posts = $this->fetchPosts($this->limit, $this->onlyPublished);
     }
 
     /**
@@ -35,7 +35,7 @@ class BlogSlider extends Component
      */
     protected function fetchPosts(int $limit, bool $onlyPublished): array
     {
-        $cacheKey = "blog_slider_articles_v1_{$limit}_" . ($onlyPublished ? 'published' : 'all');
+        $cacheKey = "blog_slider_articles_v1_{$limit}_".($onlyPublished ? 'published' : 'all');
 
         return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($limit, $onlyPublished) {
             $q = Article::query()
@@ -46,14 +46,14 @@ class BlogSlider extends Component
                 ->whereIn('status', ['published', 'active'])
                 ->select([
                     'id', 'author_id', 'title', 'slug', 'excerpt', 'content',
-                    'status', 'published_at', 'meta'
+                    'status', 'published_at', 'meta',
                 ])
                 ->orderByDesc('is_pinned')            // jika ada flag pin
                 ->orderByDesc('published_at');
 
             if ($onlyPublished) {
                 $q->whereNotNull('published_at')
-                  ->where('published_at', '<=', now());
+                    ->where('published_at', '<=', now());
             }
 
             $articles = $q->limit($limit)->get();
@@ -66,21 +66,21 @@ class BlogSlider extends Component
                 $firstCategory = optional($a->categories->first());
                 $category = $firstCategory ? [
                     'name' => $firstCategory->name,
-                    'url'  => url('/blog/category/' . $firstCategory->slug), // ganti ke route() jika ada
+                    'url' => url('/blog/category/'.$firstCategory->slug), // ganti ke route() jika ada
                 ] : null;
 
                 return [
-                    'id'           => $a->id,
-                    'title'        => $a->title,
-                    'slug'         => $a->slug,
-                    'excerpt'      => $excerpt,
+                    'id' => $a->id,
+                    'title' => $a->title,
+                    'slug' => $a->slug,
+                    'excerpt' => $excerpt,
                     // 'image'        => $this->toUrl($image),
-                    'image'        => asset('images/placeholder.jpg'),
-                    'author'       => optional($a->author)->name,
-                    'date'         => optional($a->published_at)->format('Y-m-d'),
+                    'image' => asset('images/placeholder.jpg'),
+                    'author' => optional($a->author)->name,
+                    'date' => optional($a->published_at)->format('Y-m-d'),
                     'reading_time' => $readingTime, // dalam menit (perkiraan)
-                    'category'     => $category,
-                    'url'          => url('/blog/' . $a->slug),              // ganti ke route('articles.show', $a)
+                    'category' => $category,
+                    'url' => url('/blog/'.$a->slug),              // ganti ke route('articles.show', $a)
                 ];
             })->toArray();
         });
@@ -109,8 +109,11 @@ class BlogSlider extends Component
 
         foreach ($candidates as $path) {
             $path = is_string($path) ? trim($path) : '';
-            if ($path !== '') return $path;
+            if ($path !== '') {
+                return $path;
+            }
         }
+
         return null;
     }
 
@@ -118,6 +121,7 @@ class BlogSlider extends Component
     protected function makeExcerpt(?string $excerpt, ?string $content, int $limit = 140): string
     {
         $text = trim((string) ($excerpt ?: Str::limit(strip_tags((string) $content), $limit)));
+
         return $text;
     }
 
@@ -126,13 +130,14 @@ class BlogSlider extends Component
     {
         $text = strip_tags((string) $htmlOrText);
         $words = str_word_count($text);
+
         return max(1, (int) ceil($words / 200));
     }
 
     /** Konversi path → URL publik, dengan fallback placeholder */
     protected function toUrl(?string $path): string
     {
-        if (!$path || trim((string) $path) === '') {
+        if (! $path || trim((string) $path) === '') {
             return asset('images/placeholder.jpg');
         }
         if (preg_match('~^https?://~i', $path)) {

@@ -8,15 +8,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-
 class Address extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'customer_id','label','recipient_name','phone','address_line1','address_line2','postal_code',
-        'rajaongkir_province_id','province_name','rajaongkir_city_id','city_name','rajaongkir_subdistrict_id','subdistrict_name',
-        'latitude','longitude','is_default_shipping','is_default_billing'
+        'customer_id', 'label', 'recipient_name', 'phone', 'address_line1', 'address_line2', 'postal_code',
+        'rajaongkir_province_id', 'province_name', 'rajaongkir_city_id', 'city_name', 'rajaongkir_subdistrict_id', 'subdistrict_name',
+        'latitude', 'longitude', 'is_default_shipping', 'is_default_billing',
     ];
 
     protected $casts = [

@@ -13,10 +13,11 @@ class ArticleFactory extends Factory
     public function definition(): array
     {
         $title = ucfirst($this->faker->unique()->sentence(6));
+
         return [
             'author_id' => null,
             'title' => $title,
-            'slug' => Str::slug($title) . '-' . Str::random(5),
+            'slug' => Str::slug($title).'-'.Str::random(5),
             'excerpt' => $this->faker->optional()->sentence(16),
             'content' => $this->faker->paragraphs(5, true),
             'status' => 'published',

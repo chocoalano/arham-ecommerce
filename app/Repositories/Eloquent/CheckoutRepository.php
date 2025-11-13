@@ -2,24 +2,30 @@
 
 namespace App\Repositories\Eloquent;
 
+use App\Models\Address;
 use App\Models\Cart;
 use App\Models\CartItem;
-use App\Models\Product;
-use App\Models\ProductVariant;
-use App\Models\Address;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\Shipment;
-use App\Models\ShippingQuote;
 use App\Models\Payment;
 use App\Models\PaymentLog;
+use App\Models\Product;
+use App\Models\ProductVariant;
+use App\Models\Shipment;
+use App\Models\ShippingQuote;
 use App\Repositories\Contracts\CheckoutRepositoryInterface;
 use App\Services\MidtransService;
+use App\Services\RajaOngkirService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class CheckoutRepository implements CheckoutRepositoryInterface
 {
+    public function __construct(
+        protected RajaOngkirService $rajaOngkir
+    ) {}
+
     public function prepare(int $customerId): array
     {
         $cart = Cart::with(['items.purchasable' => function ($morph) {
@@ -33,7 +39,7 @@ class CheckoutRepository implements CheckoutRepositoryInterface
         $subtotal = 0;
 
         if ($cart) {
-            $items = $cart->items->map(fn($ci) => $this->mapCartItem($ci));
+            $items = $cart->items->map(fn ($ci) => $this->mapCartItem($ci));
             $subtotal = (float) $cart->subtotal();
         }
 
@@ -42,11 +48,11 @@ class CheckoutRepository implements CheckoutRepositoryInterface
             ->first();
 
         return [
-            'items'         => $items->values()->all(),
-            'subtotal'      => $subtotal,
-            'address'       => $address ? $address->only([
-                'recipient_name','email','phone',
-                'address_line1','address_line2','province_id','city_id','postal_code'
+            'items' => $items->values()->all(),
+            'subtotal' => $subtotal,
+            'address' => $address ? $address->only([
+                'recipient_name', 'email', 'phone',
+                'address_line1', 'address_line2', 'province_id', 'city_id', 'postal_code',
             ]) : null,
             'payment_methods' => [
                 ['code' => 'manual_transfer', 'label' => 'Transfer Bank (Manual)'],
@@ -56,72 +62,167 @@ class CheckoutRepository implements CheckoutRepositoryInterface
     }
 
     public function getShippingQuotes(array $addressData): array
-{
-    // Model ShippingQuote: cart_id | address_id | courier | service | cost | etd | rajaongkir_response
-    $addressId = $addressData['address_id'] ?? null;
-    $cartId    = $addressData['cart_id']    ?? null;
-    $courier   = $addressData['courier']    ?? null;
+    {
+        // Validasi data yang diperlukan
+        if (empty($addressData['city_id'])) {
+            Log::warning('RajaOngkir: city_id tidak tersedia, menggunakan fallback quotes');
 
-    $q = ShippingQuote::query();
+            return $this->getFallbackQuotes();
+        }
 
-    // Filter paling relevan sesuai struktur tabel
-    if ($addressId) {
-        $q->where('address_id', $addressId);
+        $customerId = auth('customer')->id();
+        if (! $customerId) {
+            return $this->getFallbackQuotes();
+        }
+
+        // Ambil cart untuk menghitung total berat
+        $cart = Cart::with(['items.purchasable'])->where('customer_id', $customerId)->first();
+
+        if (! $cart || $cart->items->isEmpty()) {
+            return $this->getFallbackQuotes();
+        }
+
+        // Hitung total berat dari cart items (dalam gram)
+        $totalWeight = $cart->items->sum(function ($item) {
+            $weight = 0;
+
+            if ($item->purchasable_type === Product::class && $item->purchasable) {
+                $weight = $item->purchasable->weight_gram ?? 0;
+            } elseif ($item->purchasable_type === ProductVariant::class && $item->purchasable) {
+                $weight = $item->purchasable->weight_gram ?? $item->purchasable->product->weight_gram ?? 0;
+            }
+
+            return $weight * $item->quantity;
+        });
+
+        // Minimal weight 100 gram untuk RajaOngkir
+        $totalWeight = max(100, $totalWeight);
+
+        // Get origin dari config
+        $origin = config('rajaongkir.origin_city', 153); // Default: Jakarta Pusat
+        $destination = (int) $addressData['city_id'];
+
+        // Get couriers dari config atau default
+        $couriers = config('rajaongkir.default_couriers', ['jne', 'pos', 'tiki']);
+
+        try {
+            // Panggil RajaOngkir API untuk multiple couriers
+            $result = $this->rajaOngkir->getMultipleCosts(
+                $origin,
+                $destination,
+                $totalWeight,
+                $couriers
+            );
+
+            if (! $result['success'] || empty($result['data'])) {
+                Log::warning('RajaOngkir API failed or empty response', $result);
+
+                return $this->getFallbackQuotes();
+            }
+
+            // Parse hasil dari RajaOngkir
+            $quotes = [];
+
+            foreach ($result['data'] as $courier) {
+                $courierCode = strtoupper($courier['code'] ?? '');
+                $courierName = $courier['name'] ?? '';
+
+                if (empty($courier['costs'])) {
+                    continue;
+                }
+
+                foreach ($courier['costs'] as $cost) {
+                    $service = $cost['service'] ?? '';
+                    $description = $cost['description'] ?? '';
+                    $costValue = $cost['cost'][0]['value'] ?? 0;
+                    $etd = $cost['cost'][0]['etd'] ?? '';
+
+                    if ($costValue <= 0) {
+                        continue;
+                    }
+
+                    $code = $courierCode.'_'.$service;
+
+                    $quotes[] = [
+                        'code' => $code,
+                        'label' => $courierName.' - '.$description.' ('.$this->normalizeEtd($etd).' hari)',
+                        'cost' => (float) $costValue,
+                        'etd_days' => $this->normalizeEtd($etd),
+                        'carrier' => $courierName,
+                        'service' => $service,
+                    ];
+
+                    // Simpan ke database untuk cache
+                    ShippingQuote::updateOrCreate(
+                        [
+                            'cart_id' => $cart->id,
+                            'courier' => $courierCode,
+                            'service' => $service,
+                        ],
+                        [
+                            'cost' => $costValue,
+                            'etd' => $etd,
+                            'rajaongkir_response' => json_encode($cost),
+                        ]
+                    );
+                }
+            }
+
+            if (empty($quotes)) {
+                Log::warning('No valid shipping quotes from RajaOngkir');
+
+                return $this->getFallbackQuotes();
+            }
+
+            // Urutkan berdasarkan harga termurah
+            usort($quotes, fn ($a, $b) => $a['cost'] <=> $b['cost']);
+
+            return $quotes;
+
+        } catch (\Exception $e) {
+            Log::error('RajaOngkir Exception in getShippingQuotes', [
+                'error' => $e->getMessage(),
+                'origin' => $origin,
+                'destination' => $destination,
+                'weight' => $totalWeight,
+            ]);
+
+            return $this->getFallbackQuotes();
+        }
     }
-    if ($cartId) {
-        $q->where('cart_id', $cartId);
-    }
-    if ($courier) {
-        $q->where('courier', $courier);
-    }
 
-    // Urutkan berdasarkan biaya terendah (lebih masuk akal untuk checkout)
-    $rows = $q->orderBy('cost')->limit(10)->get();
-
-    // Fallback flat-rate jika belum ada quote yang tersimpan
-    if ($rows->isEmpty()) {
+    /**
+     * Fallback quotes jika RajaOngkir tidak tersedia
+     */
+    protected function getFallbackQuotes(): array
+    {
         return [
             [
-                'code'     => 'JNE_REG',
-                'label'    => 'JNE Reguler (2-4 hari)',
-                'cost'     => 25000,
+                'code' => 'JNE_REG',
+                'label' => 'JNE Reguler (2-4 hari)',
+                'cost' => 25000,
                 'etd_days' => '2-4',
-                'carrier'  => 'JNE',
+                'carrier' => 'JNE',
+                'service' => 'REG',
             ],
             [
-                'code'     => 'SICEPAT_REG',
-                'label'    => 'SiCepat Reguler (2-3 hari)',
-                'cost'     => 23000,
+                'code' => 'POS_REG',
+                'label' => 'POS Indonesia Reguler (3-5 hari)',
+                'cost' => 20000,
+                'etd_days' => '3-5',
+                'carrier' => 'POS',
+                'service' => 'REG',
+            ],
+            [
+                'code' => 'TIKI_REG',
+                'label' => 'TIKI Reguler (2-3 hari)',
+                'cost' => 23000,
                 'etd_days' => '2-3',
-                'carrier'  => 'SiCepat',
-            ],
-            [
-                'code'     => 'JNT_EXP',
-                'label'    => 'J&T Express (1-2 hari)',
-                'cost'     => 28000,
-                'etd_days' => '1-2',
-                'carrier'  => 'J&T',
+                'carrier' => 'TIKI',
+                'service' => 'REG',
             ],
         ];
     }
-
-    return $rows->map(function (ShippingQuote $r) {
-        // Buat code yang stabil dari courier + service
-        $code = strtoupper(preg_replace('/\s+/', '', (string) $r->courier))
-              . '_' .
-                strtoupper(preg_replace('/\s+/', '', (string) $r->service));
-
-        return [
-            'code'     => $code,
-            'label'    => trim(($r->courier ?? 'Kurir') . ' ' . ($r->service ?? '')),
-            'cost'     => (float) $r->cost,
-            'etd_days' => $this->normalizeEtd($r->etd), // ex: "2-4", "1-2"
-            'carrier'  => $r->courier ?? null,
-            // Jika perlu debugging/insight, Anda bisa expose raw data RO:
-            // 'raw'   => $r->rajaongkir_response,
-        ];
-    })->values()->all();
-}
 
     public function placeOrder(
         int $customerId,
@@ -139,7 +240,7 @@ class CheckoutRepository implements CheckoutRepositoryInterface
                 ]);
             }])->where('customer_id', $customerId)->lockForUpdate()->first();
 
-            if (!$cart || $cart->items->isEmpty()) {
+            if (! $cart || $cart->items->isEmpty()) {
                 throw new \RuntimeException('Keranjang kosong.');
             }
 
@@ -158,19 +259,19 @@ class CheckoutRepository implements CheckoutRepositoryInterface
                 ],
                 [
                     'recipient_name' => $addressData['recipient_name'] ?? '',
-                    'email'          => $addressData['email'] ?? '',
-                    'phone'          => $addressData['phone'] ?? '',
-                    'address_line2'  => $addressData['address_line2'] ?? null,
-                    'province_id'    => $addressData['province_id'] ?? null,
-                    'city_id'        => $addressData['city_id'] ?? null,
-                    'is_default'     => true,
+                    'email' => $addressData['email'] ?? '',
+                    'phone' => $addressData['phone'] ?? '',
+                    'address_line2' => $addressData['address_line2'] ?? null,
+                    'province_id' => $addressData['province_id'] ?? null,
+                    'city_id' => $addressData['city_id'] ?? null,
+                    'is_default' => true,
                 ]
             );
 
             // Shipping cost dari kode yang dipilih (validasi terhadap quotes server)
             $quotes = $this->getShippingQuotes($addressData);
             $chosen = collect($quotes)->firstWhere('code', $shippingCode);
-            if (!$chosen) {
+            if (! $chosen) {
                 throw new \RuntimeException('Metode pengiriman tidak valid.');
             }
             $shippingCost = (float) $chosen['cost'];
@@ -180,23 +281,28 @@ class CheckoutRepository implements CheckoutRepositoryInterface
 
             // Buat Order
             $orderNumber = $this->generateOrderNumber();
-            $order = new Order();
-            $order->customer_id   = $customerId;
-            $order->order_number  = $orderNumber;
-            $order->currency      = 'IDR';
-            $order->status        = 'pending'; // awaiting_payment
-            $order->subtotal      = $subtotal;
+            $order = new Order;
+            $order->customer_id = $customerId;
+            $order->order_number = $orderNumber;
+            $order->currency = 'IDR';
+            $order->status = 'pending'; // awaiting_payment
+            // @phpstan-ignore assign.propertyType
+            $order->subtotal = $subtotal;
+            // @phpstan-ignore assign.propertyType
             $order->shipping_cost = $shippingCost;
-            $order->discount_total= 0;
-            $order->tax_total     = 0;
-            $order->grand_total   = $total;
-            $order->notes          = $orderNote;
+            // @phpstan-ignore assign.propertyType
+            $order->discount_total = 0;
+            // @phpstan-ignore assign.propertyType
+            $order->tax_total = 0;
+            // @phpstan-ignore assign.propertyType
+            $order->grand_total = $total;
+            $order->notes = $orderNote;
             // snapshot alamat kirim
-            $order->customer_name    = $address->recipient_name;
-            $order->customer_email   = $address->email;
-            $order->customer_phone   = $address->phone;
+            $order->customer_name = $address->recipient_name;
+            $order->customer_email = $address->email;
+            $order->customer_phone = $address->phone;
             $order->billing_address_snapshot = $address->address_line1;
-            $order->shipping_address_snapshot= $address->address_line2;
+            $order->shipping_address_snapshot = $address->address_line2;
             $order->save();
 
             // Order Items
@@ -204,62 +310,67 @@ class CheckoutRepository implements CheckoutRepositoryInterface
                 // Validasi stok sederhana (opsional)
                 if ($ci->purchasable_type === ProductVariant::class && isset($ci->purchasable->stock_quantity)) {
                     if ($ci->purchasable->stock_quantity < $ci->quantity) {
-                        throw new \RuntimeException('Stok varian tidak mencukupi: ' . ($ci->purchasable->name ?? ''));
+                        throw new \RuntimeException('Stok varian tidak mencukupi: '.($ci->purchasable->name ?? ''));
                     }
                 }
                 if ($ci->purchasable_type === Product::class && isset($ci->purchasable->stock_quantity)) {
                     if ($ci->purchasable->stock_quantity < $ci->quantity) {
-                        throw new \RuntimeException('Stok produk tidak mencukupi: ' . ($ci->purchasable->name ?? ''));
+                        throw new \RuntimeException('Stok produk tidak mencukupi: '.($ci->purchasable->name ?? ''));
                     }
                 }
 
                 OrderItem::create([
-                    'order_id'        => $order->id,
-                    'purchasable_type'=> $ci->purchasable_type,
-                    'purchasable_id'  => $ci->purchasable_id,
-                    'sku'             => $ci->sku,
-                    'name'            => $ci->name,
-                    'quantity'        => $ci->quantity,
-                    'price'           => $ci->price,
-                    'subtotal'        => $ci->price * $ci->quantity,
-                    'weight_gram'     => $ci->weight_gram ?? 0,
+                    'order_id' => $order->id,
+                    'purchasable_type' => $ci->purchasable_type,
+                    'purchasable_id' => $ci->purchasable_id,
+                    'sku' => $ci->sku,
+                    'name' => $ci->name,
+                    'quantity' => $ci->quantity,
+                    'price' => $ci->price,
+                    'subtotal' => $ci->price * $ci->quantity,
+                    'weight_gram' => $ci->weight_gram ?? 0,
                 ]);
             }
 
             // Shipment
-            $shipment = new Shipment();
-            $shipment->order_id      = $order->id;
-            $shipment->courier  = $chosen['code'];
-            $shipment->service = $chosen['label'];
-            $shipment->cost          = $shippingCost;
-            $shipment->status        = 'pending';
+            $shipment = new Shipment;
+            $shipment->order_id = $order->id;
+            // Extract courier and service from code (e.g., "TIKI_DAT" -> courier: "TIKI", service: "DAT")
+            $codeParts = explode('_', $chosen['code'], 2);
+            $shipment->courier = $codeParts[0] ?? $chosen['code'];
+            $shipment->service = $codeParts[1] ?? ($chosen['service'] ?? '');
+            $shipment->etd = $chosen['etd_days'] ?? '';
+            // @phpstan-ignore assign.propertyType
+            $shipment->cost = $shippingCost;
+            $shipment->status = 'pending';
             $shipment->save();
 
             // Payment
-            $payment = new Payment();
-            $payment->order_id      = $order->id;
-            $payment->customer_id   = $customerId;
-            $payment->gross_amount  = $total;
-            $payment->currency      = 'IDR';
+            $payment = new Payment;
+            $payment->order_id = $order->id;
+            $payment->customer_id = $customerId;
+            // @phpstan-ignore assign.propertyType
+            $payment->gross_amount = $total;
+            $payment->currency = 'IDR';
             $payment->transaction_status = 'pending';
             $payment->save();
 
             PaymentLog::create([
                 'payment_id' => $payment->id,
-                'status'     => 'pending',
-                'message'    => 'Payment created',
-                'payload'    => ['method' => $paymentMethod],
+                'status' => 'pending',
+                'message' => 'Payment created',
+                'payload' => ['method' => $paymentMethod],
             ]);
 
             // Generate Midtrans Snap Token untuk online payment
             $snapToken = null;
             if ($paymentMethod !== 'cod' && $paymentMethod !== 'manual_transfer') {
                 try {
-                    $midtransService = new MidtransService();
+                    $midtransService = new MidtransService;
                     $snapToken = $midtransService->createSnapToken($order, $payment);
                 } catch (\Exception $e) {
                     // Log error tapi jangan fail transaksi
-                    \Log::error('Failed to create Midtrans snap token: ' . $e->getMessage());
+                    \Log::error('Failed to create Midtrans snap token: '.$e->getMessage());
                 }
             }
 
@@ -267,14 +378,14 @@ class CheckoutRepository implements CheckoutRepositoryInterface
             CartItem::where('cart_id', $cart->id)->delete();
 
             return [
-                'success'       => true,
-                'order_id'      => $order->id,
-                'order_number'  => $order->order_number,
-                'payment_id'    => $payment->id,
-                'snap_token'    => $snapToken,
-                'payment_method'=> $paymentMethod,
-                'redirect_url'  => route('checkout.thankyou', $order->order_number),
-                'message'       => 'Pesanan berhasil dibuat. Silakan lanjutkan pembayaran.',
+                'success' => true,
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'payment_id' => $payment->id,
+                'snap_token' => $snapToken,
+                'payment_method' => $paymentMethod,
+                'redirect_url' => route('checkout.thankyou', $order->order_number),
+                'message' => 'Pesanan berhasil dibuat. Silakan lanjutkan pembayaran.',
             ];
         });
     }
@@ -285,40 +396,40 @@ class CheckoutRepository implements CheckoutRepositoryInterface
     {
         $type = $ci->purchasable_type;
         $name = $ci->name ?: '';
-        $img  = null;
-        $url  = '#';
+        $img = null;
+        $url = '#';
 
         if ($type === Product::class) {
             /** @var Product $p */
             $p = $ci->purchasable;
             if ($p) {
                 $name = $p->name;
-                $url  = url('/product/'.$p->slug);
-                $img  = method_exists($p, 'firstImageUrl') ? $p->firstImageUrl() : ($p->image_path ?? null);
+                $url = url('/product/'.$p->slug);
+                $img = method_exists($p, 'firstImageUrl') ? $p->firstImageUrl() : ($p->image_path ?? null);
             }
         } elseif ($type === ProductVariant::class) {
             /** @var ProductVariant $v */
             $v = $ci->purchasable;
             if ($v) {
-                $name = ($v->product->name ?? '') . ' - ' . ($v->name ?? '');
-                $url  = url('/product/'.$v->product->slug);
-                $img  = method_exists($v->product, 'firstImageUrl') ? $v->product->firstImageUrl() : ($v->product->image_path ?? null);
+                $name = ($v->product->name ?? '').' - '.($v->name ?? '');
+                $url = url('/product/'.$v->product->slug);
+                $img = method_exists($v->product, 'firstImageUrl') ? $v->product->firstImageUrl() : ($v->product->image_path ?? null);
             }
         }
 
         return [
-            'id'          => $ci->id,
-            'sku'         => $ci->sku,
-            'name'        => $name,
-            'image'       => $img ?? asset('images/placeholder.jpg'),
-            'url'         => $url,
-            'quantity'    => (int) $ci->quantity,
-            'price'       => (float) $ci->price,
-            'subtotal'    => (float) $ci->subtotal,
-            'formatted_price'    => 'Rp ' . number_format($ci->price, 0, ',', '.'),
-            'formatted_subtotal' => 'Rp ' . number_format($ci->subtotal, 0, ',', '.'),
-            'purchasable_type'   => $type,
-            'purchasable_id'     => (int) $ci->purchasable_id,
+            'id' => $ci->id,
+            'sku' => $ci->sku,
+            'name' => $name,
+            'image' => $img ?? asset('images/placeholder.jpg'),
+            'url' => $url,
+            'quantity' => (int) $ci->quantity,
+            'price' => (float) $ci->price,
+            'subtotal' => (float) $ci->subtotal,
+            'formatted_price' => 'Rp '.number_format((float) $ci->price, 0, ',', '.'),
+            'formatted_subtotal' => 'Rp '.number_format((float) $ci->subtotal, 0, ',', '.'),
+            'purchasable_type' => $type,
+            'purchasable_id' => (int) $ci->purchasable_id,
         ];
     }
 
@@ -329,22 +440,18 @@ class CheckoutRepository implements CheckoutRepositoryInterface
 
     protected function normalizeEtd(?string $etd): string
     {
-        if (!$etd) {
-            return '';
+        if (! $etd) {
+            return '1-3';
         }
 
-        // Remove common suffix patterns like "HARI", "hari", "days", etc.
-        $normalized = preg_replace('/\s*(hari|days?)\s*/i', '', $etd);
+        // Hapus kata "HARI", "hari", spasi berlebih
+        $clean = trim(preg_replace('/\b(hari|HARI|days?|DAYS?)\b/i', '', $etd));
 
-        // Extract numbers and ranges (e.g., "2-4", "1-2", "3")
-        if (preg_match('/(\d+)\s*-\s*(\d+)/', $normalized, $matches)) {
-            return $matches[1] . '-' . $matches[2];
+        // Jika kosong setelah cleaning, return default
+        if (empty($clean)) {
+            return '1-3';
         }
 
-        if (preg_match('/(\d+)/', $normalized, $matches)) {
-            return $matches[1];
-        }
-
-        return $etd;
+        return $clean;
     }
 }

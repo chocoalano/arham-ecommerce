@@ -13,10 +13,11 @@ class ProductCategoryFactory extends Factory
     public function definition(): array
     {
         $name = $this->faker->unique()->words(2, true);
+
         return [
             'parent_id' => null,
             'name' => ucfirst($name),
-            'slug' => Str::slug($name) . '-' . Str::random(4),
+            'slug' => Str::slug($name).'-'.Str::random(4),
             'description' => $this->faker->optional()->paragraph(),
             'image_path' => $this->faker->optional()->imageUrl(800, 600, 'food', true),
             'is_active' => true,

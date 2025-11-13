@@ -43,4 +43,10 @@ return [
         'is_3ds' => env('MIDTRANS_IS_3DS', true),
     ],
 
+    'rajaongkir' => [
+        'key_cost' => env('RAJAONGKIR_API_KEY_COST', ''),
+        'key_shipping' => env('RAJAONGKIR_API_KEY_SHIPPING', ''),
+        'type' => env('RAJAONGKIR_TYPE', 'starter'),
+    ],
+
 ];

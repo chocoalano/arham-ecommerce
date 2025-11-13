@@ -13,7 +13,7 @@ class OrderFactory extends Factory
     public function definition(): array
     {
         return [
-            'order_number' => strtoupper(Str::random(4)) . '-' . $this->faker->unique()->numerify('######'),
+            'order_number' => strtoupper(Str::random(4)).'-'.$this->faker->unique()->numerify('######'),
             'customer_name' => $this->faker->name(),
             'customer_email' => $this->faker->safeEmail(),
             'customer_phone' => $this->faker->phoneNumber(),

@@ -55,7 +55,7 @@ return new class extends Migration
             $table->decimal('price', 16, 2)->default(0);
             $table->decimal('sale_price', 16, 2)->nullable();
             $table->boolean('is_featured')->default(false);
-            $table->enum('status', ['draft','active','archived'])->default('active');
+            $table->enum('status', ['draft', 'active', 'archived'])->default('active');
             $table->json('attributes')->nullable();
             $table->string('currency', 3)->default('IDR');
             $table->string('meta_title')->nullable();
@@ -99,7 +99,7 @@ return new class extends Migration
         Schema::create('vouchers', function (Blueprint $table) {
             $table->id();
             $table->string('code')->unique();
-            $table->enum('type', ['percent','fixed','free_shipping'])->default('percent');
+            $table->enum('type', ['percent', 'fixed', 'free_shipping'])->default('percent');
             $table->decimal('value', 16, 2)->default(0);
             $table->decimal('max_discount', 16, 2)->nullable();
             $table->decimal('min_subtotal', 16, 2)->nullable();
@@ -150,7 +150,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
             // PERBAIKAN: Menggunakan 'customer_id'
-            $table->index(['customer_id','rajaongkir_city_id','rajaongkir_subdistrict_id'], 'addr_geo_idx');
+            $table->index(['customer_id', 'rajaongkir_city_id', 'rajaongkir_subdistrict_id'], 'addr_geo_idx');
         });
 
         // --- 🛒 CARTS ---
@@ -166,7 +166,7 @@ return new class extends Migration
             $table->json('meta')->nullable();
             $table->timestamps();
             // PERBAIKAN: Menggunakan 'customer_id'
-            $table->index(['customer_id','session_id']);
+            $table->index(['customer_id', 'session_id']);
         });
 
         Schema::create('cart_items', function (Blueprint $table) {
@@ -195,7 +195,7 @@ return new class extends Migration
             $table->string('etd')->nullable();
             $table->json('rajaongkir_response')->nullable();
             $table->timestamps();
-            $table->index(['cart_id','courier']);
+            $table->index(['cart_id', 'courier']);
         });
 
         // --- 🧾 ORDERS ---
@@ -272,7 +272,7 @@ return new class extends Migration
             $table->string('midtrans_transaction_id')->nullable()->index();
             $table->string('order_id_ref')->nullable()->index();
             $table->enum('transaction_status', [
-                'authorize','capture','settlement','pending','deny','cancel','expire','failure','refund','partial_refund','chargeback','partial_chargeback'
+                'authorize', 'capture', 'settlement', 'pending', 'deny', 'cancel', 'expire', 'failure', 'refund', 'partial_refund', 'chargeback', 'partial_chargeback',
             ])->nullable()->index();
             $table->string('payment_type')->nullable();
             $table->string('fraud_status')->nullable();
@@ -320,7 +320,7 @@ return new class extends Migration
             $table->timestamp('shipped_at')->nullable();
             $table->timestamp('delivered_at')->nullable();
             $table->string('receiver_name')->nullable();
-            $table->enum('status', ['pending','packed','shipped','in_transit','delivered','returned','cancelled'])->default('pending');
+            $table->enum('status', ['pending', 'packed', 'shipped', 'in_transit', 'delivered', 'returned', 'cancelled'])->default('pending');
             $table->json('raw_response')->nullable();
             $table->unsignedInteger('origin_id')->nullable();
             $table->unsignedInteger('destination_id')->nullable();
@@ -393,7 +393,7 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->string('excerpt', 500)->nullable();
             $table->longText('content');
-            $table->enum('status', ['draft','published','scheduled'])->default('draft');
+            $table->enum('status', ['draft', 'published', 'scheduled'])->default('draft');
             $table->unsignedInteger('reading_time')->nullable();
             $table->string('cover_image')->nullable();
             $table->string('meta_title')->nullable();
@@ -404,13 +404,13 @@ return new class extends Migration
             $table->json('meta')->nullable();
             $table->timestamps();
             $table->softDeletes();
-            $table->index(['status','published_at']);
+            $table->index(['status', 'published_at']);
         });
 
         Schema::create('article_article_category', function (Blueprint $table) {
             $table->foreignId('article_id')->constrained('articles')->cascadeOnDelete();
             $table->foreignId('article_category_id')->constrained('article_categories')->cascadeOnDelete();
-            $table->primary(['article_id','article_category_id']);
+            $table->primary(['article_id', 'article_category_id']);
         });
 
         Schema::create('tags', function (Blueprint $table) {
@@ -423,7 +423,7 @@ return new class extends Migration
         Schema::create('article_tag', function (Blueprint $table) {
             $table->foreignId('article_id')->constrained('articles')->cascadeOnDelete();
             $table->foreignId('tag_id')->constrained('tags')->cascadeOnDelete();
-            $table->primary(['article_id','tag_id']);
+            $table->primary(['article_id', 'tag_id']);
         });
 
         Schema::create('comments', function (Blueprint $table) {
@@ -435,7 +435,7 @@ return new class extends Migration
             $table->string('guest_name')->nullable();
             $table->string('guest_email')->nullable();
             $table->longText('content');
-            $table->enum('status', ['pending','approved','spam'])->default('pending');
+            $table->enum('status', ['pending', 'approved', 'spam'])->default('pending');
             $table->timestamps();
             $table->softDeletes();
             $table->index(['status']);

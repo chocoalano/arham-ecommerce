@@ -9,13 +9,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-
 class ProductReview extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'customer_id','reviewable_type','reviewable_id','rating','title','content','status','parent_id'
+        'customer_id', 'reviewable_type', 'reviewable_id', 'rating', 'title', 'content', 'status', 'parent_id',
     ];
 
     protected $casts = [

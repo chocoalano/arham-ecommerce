@@ -112,3 +112,16 @@ Route::name('payment.')
         Route::get('/unfinish/{order_number}', 'unfinish')->name('unfinish');
         Route::get('/failed/{order_number}', 'failed')->name('failed');
     });
+
+// RajaOngkir API Routes
+Route::name('api.rajaongkir.')
+    ->prefix('api/rajaongkir')
+    ->controller(App\Http\Controllers\Api\RajaOngkirController::class)
+    ->group(function () {
+        Route::get('/provinces', 'provinces')->name('provinces');
+        Route::get('/cities', 'cities')->name('cities');
+        Route::get('/subdistricts', 'subdistricts')->name('subdistricts');
+        Route::post('/cost', 'calculateCost')->name('cost');
+        Route::post('/cost/multiple', 'calculateMultipleCosts')->name('cost.multiple');
+        Route::get('/couriers', 'couriers')->name('couriers');
+    });

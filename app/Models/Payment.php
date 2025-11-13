@@ -7,16 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-
 class Payment extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'order_id','customer_id','provider','midtrans_transaction_id','order_id_ref','transaction_status','payment_type',
-        'fraud_status','gross_amount','currency','transaction_time','settlement_time','expiry_time',
-        'va_numbers','permata_va_number','bill_key','biller_code','masked_card','bank','store','signature_key',
-        'actions','raw_response','refund_amount','refunded_at'
+        'order_id', 'customer_id', 'provider', 'midtrans_transaction_id', 'order_id_ref', 'transaction_status', 'payment_type',
+        'fraud_status', 'gross_amount', 'currency', 'transaction_time', 'settlement_time', 'expiry_time',
+        'va_numbers', 'permata_va_number', 'bill_key', 'biller_code', 'masked_card', 'bank', 'store', 'signature_key',
+        'actions', 'raw_response', 'refund_amount', 'refunded_at',
     ];
 
     protected $casts = [

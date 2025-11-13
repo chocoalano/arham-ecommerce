@@ -12,13 +12,14 @@ class PaymentFactory extends Factory
 
     public function definition(): array
     {
-        $status = $this->faker->randomElement(['pending','settlement','capture','expire']);
+        $status = $this->faker->randomElement(['pending', 'settlement', 'capture', 'expire']);
+
         return [
             'provider' => 'midtrans',
             'midtrans_transaction_id' => $this->faker->uuid(),
-            'order_id_ref' => strtoupper(Str::random(5)) . $this->faker->numerify('######'),
+            'order_id_ref' => strtoupper(Str::random(5)).$this->faker->numerify('######'),
             'transaction_status' => $status,
-            'payment_type' => $this->faker->randomElement(['bank_transfer','qris','credit_card']),
+            'payment_type' => $this->faker->randomElement(['bank_transfer', 'qris', 'credit_card']),
             'fraud_status' => null,
             'gross_amount' => $this->faker->randomFloat(2, 50000, 2000000),
             'currency' => 'IDR',

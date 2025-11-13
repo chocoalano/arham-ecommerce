@@ -51,7 +51,7 @@ class MidtransService
 
             return $snapToken;
         } catch (\Exception $e) {
-            throw new \RuntimeException('Failed to create Midtrans snap token: ' . $e->getMessage());
+            throw new \RuntimeException('Failed to create Midtrans snap token: '.$e->getMessage());
         }
     }
 
@@ -110,7 +110,7 @@ class MidtransService
     public function handleNotification(array $notificationData): array
     {
         try {
-            $notification = new \Midtrans\Notification();
+            $notification = new \Midtrans\Notification;
 
             $transactionStatus = $notification->transaction_status;
             $fraudStatus = $notification->fraud_status ?? null;
@@ -164,7 +164,7 @@ class MidtransService
                 'order_status' => $status,
             ];
         } catch (\Exception $e) {
-            throw new \RuntimeException('Failed to handle notification: ' . $e->getMessage());
+            throw new \RuntimeException('Failed to handle notification: '.$e->getMessage());
         }
     }
 
@@ -209,7 +209,7 @@ class MidtransService
                 'gross_amount' => $status->gross_amount,
             ];
         } catch (\Exception $e) {
-            throw new \RuntimeException('Failed to check transaction status: ' . $e->getMessage());
+            throw new \RuntimeException('Failed to check transaction status: '.$e->getMessage());
         }
     }
 }

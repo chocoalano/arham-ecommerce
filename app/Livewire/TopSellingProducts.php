@@ -2,16 +2,14 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Storage;
-
 use App\Models\Product;
-use App\Models\ProductVariant;
 use App\Models\ProductImage;
 use App\Models\ProductReview;
-use App\Models\ProductCategory;
+use App\Models\ProductVariant;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Component;
 
 class TopSellingProducts extends Component
 {
@@ -26,6 +24,7 @@ class TopSellingProducts extends Component
 
     /** Filter kategori (opsional) */
     public ?int $categoryId = null;
+
     public ?string $categorySlug = null;
 
     public function mount(
@@ -34,9 +33,9 @@ class TopSellingProducts extends Component
         ?int $categoryId = null,
         ?string $categorySlug = null
     ): void {
-        $this->limit        = $limit;
-        $this->days         = $days;
-        $this->categoryId   = $categoryId;
+        $this->limit = $limit;
+        $this->days = $days;
+        $this->categoryId = $categoryId;
         $this->categorySlug = $categorySlug;
 
         $this->items = $this->fetchTopSelling(
@@ -56,7 +55,7 @@ class TopSellingProducts extends Component
      */
     protected function fetchTopSelling(int $limit, ?int $days, ?int $categoryId, ?string $categorySlug): array
     {
-        $cacheKey = "topselling_v2_l{$limit}_d" . ($days ?? 'all') . "_cid" . ($categoryId ?? 'null') . "_cslug" . ($categorySlug ?? 'null');
+        $cacheKey = "topselling_v2_l{$limit}_d".($days ?? 'all').'_cid'.($categoryId ?? 'null').'_cslug'.($categorySlug ?? 'null');
 
         return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($limit, $days, $categoryId, $categorySlug) {
 
@@ -115,12 +114,12 @@ class TopSellingProducts extends Component
                 ->joinSub($totalSales, 'ts', fn ($join) => $join->on('ts.product_id', '=', 'products.id'))
                 ->leftJoin('product_images as thumb', function ($join) {
                     $join->on('thumb.product_id', '=', 'products.id')
-                         ->where('thumb.is_thumbnail', '=', 1);
+                        ->where('thumb.is_thumbnail', '=', 1);
                 })
                 ->leftJoinSub($minSortPerProduct, 'ms', fn ($join) => $join->on('ms.product_id', '=', 'products.id'))
                 ->leftJoin('product_images as img', function ($join) {
                     $join->on('img.product_id', '=', 'products.id')
-                         ->on('img.sort_order', '=', 'ms.min_sort');
+                        ->on('img.sort_order', '=', 'ms.min_sort');
                 })
                 ->where('products.status', 'active')
                 ->select([
@@ -143,7 +142,7 @@ class TopSellingProducts extends Component
             // Filter kategori (pivot product_category_product)
             if ($categoryId || $categorySlug) {
                 $q->join('product_category_product as pcp', 'pcp.product_id', '=', 'products.id')
-                  ->join('product_categories as pc', 'pc.id', '=', 'pcp.product_category_id');
+                    ->join('product_categories as pc', 'pc.id', '=', 'pcp.product_category_id');
 
                 if ($categoryId) {
                     $q->where('pc.id', $categoryId);
@@ -160,12 +159,12 @@ class TopSellingProducts extends Component
                 $fallback = Product::query()
                     ->leftJoin('product_images as thumb', function ($join) {
                         $join->on('thumb.product_id', '=', 'products.id')
-                             ->where('thumb.is_thumbnail', '=', 1);
+                            ->where('thumb.is_thumbnail', '=', 1);
                     })
                     ->leftJoinSub($minSortPerProduct, 'ms', fn ($join) => $join->on('ms.product_id', '=', 'products.id'))
                     ->leftJoin('product_images as img', function ($join) {
                         $join->on('img.product_id', '=', 'products.id')
-                             ->on('img.sort_order', '=', 'ms.min_sort');
+                            ->on('img.sort_order', '=', 'ms.min_sort');
                     })
                     ->where('products.status', 'active')
                     ->where('products.is_featured', true)
@@ -193,7 +192,7 @@ class TopSellingProducts extends Component
             return $rows->map(function ($row) {
                 // Harga product
                 $price = (float) ($row->price ?? 0);
-                $sale  = $row->sale_price !== null ? (float) $row->sale_price : null;
+                $sale = $row->sale_price !== null ? (float) $row->sale_price : null;
                 $final = ($sale !== null && $sale > 0 && $sale < $price) ? $sale : $price;
 
                 // Harga varian termurah (untuk label "Mulai dari")
@@ -205,24 +204,24 @@ class TopSellingProducts extends Component
                     : null;
 
                 // Rating
-                $avgRating    = $row->avg_rating !== null ? round((float) $row->avg_rating, 1) : null;
+                $avgRating = $row->avg_rating !== null ? round((float) $row->avg_rating, 1) : null;
                 $reviewsCount = (int) ($row->reviews_count ?? 0);
 
                 return [
-                    'id'           => $row->id,
-                    'slug'         => $row->slug,
-                    'name'         => $row->name,
-                    'desc'         => $row->short_description,
-                    'image'        => $this->toUrl($row->image_path),
-                    'price'        => $price,
-                    'sale_price'   => $sale,
-                    'final_price'  => $final,
+                    'id' => $row->id,
+                    'slug' => $row->slug,
+                    'name' => $row->name,
+                    'desc' => $row->short_description,
+                    'image' => $this->toUrl($row->image_path),
+                    'price' => $price,
+                    'sale_price' => $sale,
+                    'final_price' => $final,
                     'from_variant' => $fromVariant,
-                    'discount'     => $discount,
-                    'total_sold'   => (int) $row->total_sold,
-                    'rating_avg'   => $avgRating,
+                    'discount' => $discount,
+                    'total_sold' => (int) $row->total_sold,
+                    'rating_avg' => $avgRating,
                     'rating_count' => $reviewsCount,
-                    'url'          => url('/product/' . $row->slug),
+                    'url' => url('/product/'.$row->slug),
                 ];
             })->toArray();
         });
@@ -230,7 +229,7 @@ class TopSellingProducts extends Component
 
     protected function toUrl(?string $path): string
     {
-        if (!$path || trim((string) $path) === '') {
+        if (! $path || trim((string) $path) === '') {
             return asset('images/placeholder.jpg');
         }
         if (preg_match('~^https?://~i', $path)) {

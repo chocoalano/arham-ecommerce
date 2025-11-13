@@ -9,12 +9,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-
 class ArticleCategory extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['parent_id','name','slug','description','sort_order'];
+    protected $fillable = ['parent_id', 'name', 'slug', 'description', 'sort_order'];
 
     public function parent(): BelongsTo
     {

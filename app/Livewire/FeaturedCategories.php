@@ -2,15 +2,14 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Storage;
-
-// Models
 use App\Models\Product;
-use App\Models\ProductImage;
 use App\Models\ProductCategory;
+use App\Models\ProductImage;
+use Illuminate\Support\Facades\Cache;
+// Models
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Component;
 
 class FeaturedCategories extends Component
 {
@@ -28,8 +27,8 @@ class FeaturedCategories extends Component
 
     public function mount(int $limit = 6, bool $onlyRoot = true, bool $hideEmpty = true): void
     {
-        $this->limit     = $limit;
-        $this->onlyRoot  = $onlyRoot;
+        $this->limit = $limit;
+        $this->onlyRoot = $onlyRoot;
         $this->hideEmpty = $hideEmpty;
 
         $this->categories = $this->fetchCategories(
@@ -39,7 +38,7 @@ class FeaturedCategories extends Component
 
     protected function fetchCategories(int $limit, bool $onlyRoot, bool $hideEmpty): array
     {
-        $cacheKey = "featured_categories_v3_{$limit}_" . ($onlyRoot ? 'root' : 'all') . '_' . ($hideEmpty ? 'hide0' : 'show0');
+        $cacheKey = "featured_categories_v3_{$limit}_".($onlyRoot ? 'root' : 'all').'_'.($hideEmpty ? 'hide0' : 'show0');
 
         return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($limit, $onlyRoot, $hideEmpty) {
             // -- Subquery: ambil 1 produk aktif per kategori (untuk fallback image)
@@ -59,14 +58,14 @@ class FeaturedCategories extends Component
                 ->fromSub($minActiveProductPerCategory, 'mp')
                 ->leftJoin('product_images as thumb', function ($join) {
                     $join->on('thumb.product_id', '=', 'mp.min_product_id')
-                         ->where('thumb.is_thumbnail', '=', 1);
+                        ->where('thumb.is_thumbnail', '=', 1);
                 })
                 ->leftJoinSub($minSortPerProduct, 'ms', function ($join) {
                     $join->on('ms.product_id', '=', 'mp.min_product_id');
                 })
                 ->leftJoin('product_images as img', function ($join) {
                     $join->on('img.product_id', '=', 'mp.min_product_id')
-                         ->on('img.sort_order', '=', 'ms.min_sort');
+                        ->on('img.sort_order', '=', 'ms.min_sort');
                 })
                 ->select([
                     'mp.product_category_id',
@@ -92,7 +91,7 @@ class FeaturedCategories extends Component
                 ->withCount([
                     'products as products_active_count' => function ($qq) {
                         $qq->where('status', 'active');
-                    }
+                    },
                 ]);
 
             // Filter yang kosong pakai HAVING (alias siap karena withCount dipanggil SETELAH select)
@@ -102,18 +101,18 @@ class FeaturedCategories extends Component
 
             // Urutkan populer → nama
             $q->orderByDesc('products_active_count')
-              ->orderBy('product_categories.name');
+                ->orderBy('product_categories.name');
 
             $rows = $q->limit($limit)->get();
 
             return $rows->map(function ($row) {
                 return [
-                    'id'    => $row->id,
-                    'slug'  => $row->slug,
-                    'name'  => $row->name,
+                    'id' => $row->id,
+                    'slug' => $row->slug,
+                    'name' => $row->name,
                     'count' => (int) ($row->products_active_count ?? 0),
                     'image' => $this->toUrl($row->effective_image_path), // prioritaskan category.image_path → fallback product image → placeholder
-                    'url'   => url('/category/' . $row->slug), // ganti ke route() jika punya route name
+                    'url' => url('/category/'.$row->slug), // ganti ke route() jika punya route name
                 ];
             })->toArray();
         });
@@ -121,7 +120,7 @@ class FeaturedCategories extends Component
 
     protected function toUrl(?string $path): string
     {
-        if (!$path || trim((string) $path) === '') {
+        if (! $path || trim((string) $path) === '') {
             return asset('images/placeholder.jpg');
         }
         if (preg_match('~^https?://~i', $path)) {

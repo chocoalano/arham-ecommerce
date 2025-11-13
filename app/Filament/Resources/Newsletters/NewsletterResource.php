@@ -25,9 +25,9 @@ class NewsletterResource extends Resource
 {
     protected static ?string $model = Newsletter::class;
 
-    protected static ?string $navigationLabel = 'Newsletter';
+    protected static ?string $navigationLabel = 'Berlangganan';
 
-    protected static ?string $pluralLabel = 'Newsletter';
+    protected static ?string $pluralLabel = 'Berlangganan';
 
     protected static string|UnitEnum|null $navigationGroup = 'Marketing';
 
@@ -119,6 +119,7 @@ class NewsletterResource extends Resource
                 ViewAction::make(),
                 EditAction::make(),
                 DeleteAction::make(),
+
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

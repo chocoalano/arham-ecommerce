@@ -13,9 +13,10 @@ class BrandFactory extends Factory
     public function definition(): array
     {
         $name = $this->faker->unique()->company();
+
         return [
             'name' => $name,
-            'slug' => Str::slug($name) . '-' . Str::random(4),
+            'slug' => Str::slug($name).'-'.Str::random(4),
             'description' => $this->faker->optional()->sentence(),
             'logo_path' => $this->faker->optional()->imageUrl(200, 200, 'brand', true),
             'is_active' => true,

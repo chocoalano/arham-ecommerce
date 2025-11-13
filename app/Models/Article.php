@@ -8,13 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-
 class Article extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'author_id','title','slug','excerpt','content','status','reading_time','cover_image','meta_title','meta_description','published_at','scheduled_at','is_pinned','meta'
+        'author_id', 'title', 'slug', 'excerpt', 'content', 'status', 'reading_time', 'cover_image', 'meta_title', 'meta_description', 'published_at', 'scheduled_at', 'is_pinned', 'meta',
     ];
 
     protected $casts = [

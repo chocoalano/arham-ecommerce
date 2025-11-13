@@ -13,13 +13,13 @@ class ArticleController extends Controller
     public function index(Request $request)
     {
         $perPage = (int) ($request->integer('per_page') ?: 12);
-        $q       = trim((string) $request->get('q', ''));
+        $q = trim((string) $request->get('q', ''));
 
         $articles = Article::query()
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($x) use ($q) {
                     $x->where('title', 'like', "%{$q}%")
-                      ->orWhere('slug', 'like', "%{$q}%");
+                        ->orWhere('slug', 'like', "%{$q}%");
                 });
             })
             ->orderByDesc('created_at')      // aman di berbagai skema
@@ -28,7 +28,7 @@ class ArticleController extends Controller
 
         return view('articles', [
             'articles' => $articles,
-            'q'        => $q,
+            'q' => $q,
         ]);
     }
 

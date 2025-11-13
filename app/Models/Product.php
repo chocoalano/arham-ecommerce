@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,18 +10,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Casts\Attribute;
-
 
 class Product extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'sku','name','slug','brand_id','short_description','description',
-        'weight_gram','length_mm','width_mm','height_mm',
-        'price','sale_price','is_featured','status','attributes',
-        'currency','meta_title','meta_description','stock'
+        'sku', 'name', 'slug', 'brand_id', 'short_description', 'description',
+        'weight_gram', 'length_mm', 'width_mm', 'height_mm',
+        'price', 'sale_price', 'is_featured', 'status', 'attributes',
+        'currency', 'meta_title', 'meta_description', 'stock',
     ];
 
     protected $casts = [
@@ -78,7 +77,7 @@ class Product extends Model
     protected function effectivePrice(): Attribute
     {
         return Attribute::make(
-            get: fn() => (float) ($this->sale_price ?? $this->price ?? 0)
+            get: fn () => (float) ($this->sale_price ?? $this->price ?? 0)
         );
     }
 
@@ -95,7 +94,9 @@ class Product extends Model
     /** Atomically adjust stock (positive or negative). */
     public function adjustStock(int $delta): void
     {
-        if ($delta === 0) return;
+        if ($delta === 0) {
+            return;
+        }
         $delta > 0 ? $this->increment('stock', $delta) : $this->decrement('stock', abs($delta));
         $this->refresh();
     }

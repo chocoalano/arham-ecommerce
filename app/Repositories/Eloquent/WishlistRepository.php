@@ -23,7 +23,9 @@ class WishlistRepository implements WishlistRepositoryInterface
     public function count(int $customerId): int
     {
         $wishlist = Wishlist::where('customer_id', $customerId)->first();
-        if (! $wishlist) return 0;
+        if (! $wishlist) {
+            return 0;
+        }
 
         return (int) WishlistItem::where('wishlist_id', $wishlist->id)->count();
     }
@@ -54,8 +56,8 @@ class WishlistRepository implements WishlistRepositoryInterface
 
         // (opsional) ambil agregat rating sekaligus
         $ratings = ProductReview::select('reviewable_id',
-                DB::raw('AVG(rating) as avg_rating'),
-                DB::raw('COUNT(*) as reviews_count'))
+            DB::raw('AVG(rating) as avg_rating'),
+            DB::raw('COUNT(*) as reviews_count'))
             ->where('reviewable_type', Product::class)
             ->whereIn('reviewable_id', array_unique(array_merge(
                 $products->keys()->all(),
@@ -69,7 +71,8 @@ class WishlistRepository implements WishlistRepositoryInterface
         return $wishlist->items
             ->sortByDesc('created_at')
             ->map(function (WishlistItem $wi) use ($products, $variants, $ratings) {
-                $product = null; $variant = null;
+                $product = null;
+                $variant = null;
 
                 if ($wi->purchasable_type === Product::class) {
                     $product = $products->get($wi->purchasable_id);
@@ -78,16 +81,18 @@ class WishlistRepository implements WishlistRepositoryInterface
                     $product = $variant?->product;
                 }
 
-                if (! $product) return null;
+                if (! $product) {
+                    return null;
+                }
 
                 $card = $this->buildCardData($product, $variant, $ratings[$product->id] ?? null);
 
                 return [
-                    'id'               => $wi->id,
+                    'id' => $wi->id,
                     'purchasable_type' => $wi->purchasable_type,
-                    'purchasable_id'   => $wi->purchasable_id,
-                    'added_at'         => $wi->created_at,
-                    'card'             => $card,
+                    'purchasable_id' => $wi->purchasable_id,
+                    'added_at' => $wi->created_at,
+                    'card' => $card,
                 ];
             })
             ->filter()
@@ -101,16 +106,16 @@ class WishlistRepository implements WishlistRepositoryInterface
             $wishlist = $this->getOrCreateByCustomerId($customerId);
 
             $purchasableType = Product::class;
-            $purchasableId   = (int) ($productId ?? 0);
+            $purchasableId = (int) ($productId ?? 0);
 
-            if (!empty($variantId)) {
+            if (! empty($variantId)) {
                 $variant = ProductVariant::with('product')
                     ->where('id', (int) $variantId)
                     ->where('is_active', true)
                     ->firstOrFail();
 
                 $purchasableType = ProductVariant::class;
-                $purchasableId   = (int) $variant->id;
+                $purchasableId = (int) $variant->id;
             }
 
             $existing = WishlistItem::where('wishlist_id', $wishlist->id)
@@ -121,24 +126,24 @@ class WishlistRepository implements WishlistRepositoryInterface
             if ($existing) {
                 $existing->delete();
                 $inWishlist = false;
-                $message    = 'Dihapus dari wishlist';
+                $message = 'Dihapus dari wishlist';
             } else {
                 WishlistItem::create([
-                    'wishlist_id'     => $wishlist->id,
-                    'purchasable_type'=> $purchasableType,
-                    'purchasable_id'  => $purchasableId,
+                    'wishlist_id' => $wishlist->id,
+                    'purchasable_type' => $purchasableType,
+                    'purchasable_id' => $purchasableId,
                 ]);
                 $inWishlist = true;
-                $message    = 'Ditambahkan ke wishlist';
+                $message = 'Ditambahkan ke wishlist';
             }
 
             $count = WishlistItem::where('wishlist_id', $wishlist->id)->count();
 
             return [
-                'success'      => true,
-                'message'      => $message,
-                'in_wishlist'  => $inWishlist,
-                'count'        => (int) $count,
+                'success' => true,
+                'message' => $message,
+                'in_wishlist' => $inWishlist,
+                'count' => (int) $count,
             ];
         });
     }
@@ -151,7 +156,8 @@ class WishlistRepository implements WishlistRepositoryInterface
             ->where('id', $itemId)
             ->firstOrFail();
 
-        $product = null; $variant = null;
+        $product = null;
+        $variant = null;
 
         if ($item->purchasable_type === Product::class) {
             $product = Product::findOrFail($item->purchasable_id);
@@ -162,8 +168,8 @@ class WishlistRepository implements WishlistRepositoryInterface
 
         // rating agregat untuk produk ini
         $ratingAgg = ProductReview::select('reviewable_id',
-                DB::raw('AVG(rating) as avg_rating'),
-                DB::raw('COUNT(*) as reviews_count'))
+            DB::raw('AVG(rating) as avg_rating'),
+            DB::raw('COUNT(*) as reviews_count'))
             ->where('reviewable_type', Product::class)
             ->where('reviewable_id', $product->id)
             ->where('status', 'approved')
@@ -174,12 +180,12 @@ class WishlistRepository implements WishlistRepositoryInterface
 
         return [
             'success' => true,
-            'item'    => [
-                'id'               => $item->id,
+            'item' => [
+                'id' => $item->id,
                 'purchasable_type' => $item->purchasable_type,
-                'purchasable_id'   => $item->purchasable_id,
-                'added_at'         => $item->created_at,
-                'card'             => $card,
+                'purchasable_id' => $item->purchasable_id,
+                'added_at' => $item->created_at,
+                'card' => $card,
             ],
         ];
     }
@@ -194,9 +200,10 @@ class WishlistRepository implements WishlistRepositoryInterface
                 ->where('id', $itemId)
                 ->firstOrFail();
 
-            $product = null; $variant = null;
+            $product = null;
+            $variant = null;
 
-            if (!empty($variantId)) {
+            if (! empty($variantId)) {
                 // pindah ke variant tertentu
                 $variant = ProductVariant::with('product')
                     ->where('id', (int) $variantId)
@@ -204,7 +211,7 @@ class WishlistRepository implements WishlistRepositoryInterface
                     ->firstOrFail();
 
                 $item->purchasable_type = ProductVariant::class;
-                $item->purchasable_id   = (int) $variant->id;
+                $item->purchasable_id = (int) $variant->id;
                 $item->save();
 
                 $product = $variant->product;
@@ -215,7 +222,7 @@ class WishlistRepository implements WishlistRepositoryInterface
                     $product = $variant->product;
 
                     $item->purchasable_type = Product::class;
-                    $item->purchasable_id   = (int) $product->id;
+                    $item->purchasable_id = (int) $product->id;
                     $item->save();
                 } else {
                     $product = Product::findOrFail($item->purchasable_id);
@@ -224,8 +231,8 @@ class WishlistRepository implements WishlistRepositoryInterface
 
             // rating agregat untuk produk ini
             $ratingAgg = ProductReview::select('reviewable_id',
-                    DB::raw('AVG(rating) as avg_rating'),
-                    DB::raw('COUNT(*) as reviews_count'))
+                DB::raw('AVG(rating) as avg_rating'),
+                DB::raw('COUNT(*) as reviews_count'))
                 ->where('reviewable_type', Product::class)
                 ->where('reviewable_id', $product->id)
                 ->where('status', 'approved')
@@ -237,11 +244,11 @@ class WishlistRepository implements WishlistRepositoryInterface
             return [
                 'success' => true,
                 'message' => 'Wishlist item diperbarui',
-                'item'    => [
-                    'id'               => $item->id,
+                'item' => [
+                    'id' => $item->id,
                     'purchasable_type' => $item->purchasable_type,
-                    'purchasable_id'   => $item->purchasable_id,
-                    'card'             => $card,
+                    'purchasable_id' => $item->purchasable_id,
+                    'card' => $card,
                 ],
             ];
         });
@@ -261,7 +268,7 @@ class WishlistRepository implements WishlistRepositoryInterface
             return [
                 'success' => true,
                 'message' => 'Item wishlist dihapus',
-                'count'   => (int) WishlistItem::where('wishlist_id', $wishlist->id)->count(),
+                'count' => (int) WishlistItem::where('wishlist_id', $wishlist->id)->count(),
             ];
         });
     }
@@ -281,21 +288,21 @@ class WishlistRepository implements WishlistRepositoryInterface
         $imagePath = $thumb ?: $fallbackImage ?: null;
 
         // rating dari agregasi (jika dipass)
-        $avgRating    = $ratingAgg ? (float) $ratingAgg->avg_rating : (float) ProductReview::where('reviewable_type', Product::class)
-                                    ->where('reviewable_id', $product->id)
-                                    ->where('status', 'approved')->avg('rating');
+        $avgRating = $ratingAgg ? (float) $ratingAgg->avg_rating : (float) ProductReview::where('reviewable_type', Product::class)
+            ->where('reviewable_id', $product->id)
+            ->where('status', 'approved')->avg('rating');
         $reviewsCount = $ratingAgg ? (int) $ratingAgg->reviews_count : (int) ProductReview::where('reviewable_type', Product::class)
-                                    ->where('reviewable_id', $product->id)
-                                    ->where('status', 'approved')->count();
+            ->where('reviewable_id', $product->id)
+            ->where('status', 'approved')->count();
 
         if ($variant) {
             $price = (float) ($variant->price ?? 0);
-            $sale  = isset($variant->sale_price) ? (float) $variant->sale_price : null;
-            $name  = $product->name . ' - ' . ($variant->name ?? '');
+            $sale = isset($variant->sale_price) ? (float) $variant->sale_price : null;
+            $name = $product->name.' - '.($variant->name ?? '');
         } else {
             $price = (float) ($product->price ?? 0);
-            $sale  = isset($product->sale_price) ? (float) $product->sale_price : null;
-            $name  = $product->name;
+            $sale = isset($product->sale_price) ? (float) $product->sale_price : null;
+            $name = $product->name;
         }
 
         $final = ($sale !== null && $sale > 0 && $sale < $price) ? $sale : $price;
@@ -305,24 +312,24 @@ class WishlistRepository implements WishlistRepositoryInterface
             : null;
 
         return [
-            'id'            => $product->id,
-            'slug'          => $product->slug,
-            'url'           => url('/product/' . $product->slug),
-            'name'          => $name,
-            'image'         => $this->toUrl($imagePath),
-            'price'         => $price,
-            'sale_price'    => $sale,
-            'final_price'   => $final,
-            'discount'      => $discount,
-            'rating_avg'    => $avgRating ? round($avgRating, 1) : null,
-            'rating_count'  => $reviewsCount,
-            'is_new'        => false,
+            'id' => $product->id,
+            'slug' => $product->slug,
+            'url' => url('/product/'.$product->slug),
+            'name' => $name,
+            'image' => $this->toUrl($imagePath),
+            'price' => $price,
+            'sale_price' => $sale,
+            'final_price' => $final,
+            'discount' => $discount,
+            'rating_avg' => $avgRating ? round($avgRating, 1) : null,
+            'rating_count' => $reviewsCount,
+            'is_new' => false,
         ];
     }
 
     protected function toUrl(?string $path): string
     {
-        if (!$path || trim((string)$path) === '') {
+        if (! $path || trim((string) $path) === '') {
             return asset('images/placeholder.jpg');
         }
         if (preg_match('~^https?://~i', $path)) {

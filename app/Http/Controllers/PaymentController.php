@@ -28,7 +28,7 @@ class PaymentController extends Controller
                 'message' => $result['message'],
             ]);
         } catch (\Exception $e) {
-            Log::error('Midtrans notification error: ' . $e->getMessage());
+            Log::error('Midtrans notification error: '.$e->getMessage());
 
             return response()->json([
                 'success' => false,

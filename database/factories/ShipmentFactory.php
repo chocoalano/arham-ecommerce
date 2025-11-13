@@ -12,11 +12,11 @@ class ShipmentFactory extends Factory
     public function definition(): array
     {
         return [
-            'courier' => $this->faker->randomElement(['jne','tiki','pos','sicepat']),
-            'service' => $this->faker->randomElement(['REG','YES','OKE']),
+            'courier' => $this->faker->randomElement(['jne', 'tiki', 'pos', 'sicepat']),
+            'service' => $this->faker->randomElement(['REG', 'YES', 'OKE']),
             'waybill' => $this->faker->optional()->bothify('WB########'),
             'cost' => $this->faker->randomFloat(2, 8000, 45000),
-            'etd' => $this->faker->randomElement(['1-2 HARI','2-3 HARI','3-5 HARI']),
+            'etd' => $this->faker->randomElement(['1-2 HARI', '2-3 HARI', '3-5 HARI']),
             'shipped_at' => null,
             'delivered_at' => null,
             'receiver_name' => null,

@@ -8,13 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-
 class Comment extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'article_id','customer_id','parent_id','guest_name','guest_email','content','status'
+        'article_id', 'customer_id', 'parent_id', 'guest_name', 'guest_email', 'content', 'status',
     ];
 
     public function article(): BelongsTo

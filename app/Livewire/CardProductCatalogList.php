@@ -13,17 +13,17 @@ use Throwable;
 
 class CardProductCatalogList extends Component
 {
-
     public int $productId;
-    public array $p = [];
-    public int $qty = 1;
-    public bool $inWishlist = false;
-    public bool $showActions = true;
-    public ?int $variantId = null;
 
-    // Properties untuk notification
-    public string $notificationMessage = '';
-    public string $notificationType = '';
+    public array $p = [];
+
+    public int $qty = 1;
+
+    public bool $inWishlist = false;
+
+    public bool $showActions = true;
+
+    public ?int $variantId = null;
 
     public function mount(
         int $productId,
@@ -32,16 +32,35 @@ class CardProductCatalogList extends Component
         bool $showActions = true,
         ?int $variantId = null
     ): void {
-        $this->productId   = $productId;
-        $this->qty         = max(1, $qty);
-        $this->inWishlist  = $inWishlist;
+        $this->productId = $productId;
+        $this->qty = max(1, $qty);
+        $this->inWishlist = $inWishlist;
         $this->showActions = $showActions;
-        $this->variantId   = $variantId;
+        $this->variantId = $variantId;
 
         $this->p = $this->buildCardData($this->productId);
+
+        // Check wishlist status if customer is logged in
+        if (auth('customer')->check()) {
+            $this->checkWishlistStatus();
+        }
     }
 
     /** === Actions === */
+    protected function checkWishlistStatus(): void
+    {
+        $customerId = auth('customer')->id();
+
+        $exists = \App\Models\WishlistItem::query()
+            ->whereHas('wishlist', function ($q) use ($customerId) {
+                $q->where('customer_id', $customerId);
+            })
+            ->where('purchasable_type', \App\Models\Product::class)
+            ->where('purchasable_id', $this->productId)
+            ->exists();
+
+        $this->inWishlist = $exists;
+    }
 
     public function goToDetail(): void
     {
@@ -50,7 +69,6 @@ class CardProductCatalogList extends Component
     }
 
     /** === Helpers === */
-
     protected function buildCardData(int $id): array
     {
         $minSortPerProduct = ProductImage::query()
@@ -77,12 +95,12 @@ class CardProductCatalogList extends Component
         $row = Product::query()
             ->leftJoin('product_images as thumb', function ($join) {
                 $join->on('thumb.product_id', '=', 'products.id')
-                     ->where('thumb.is_thumbnail', '=', 1);
+                    ->where('thumb.is_thumbnail', '=', 1);
             })
             ->leftJoinSub($minSortPerProduct, 'ms', fn ($join) => $join->on('ms.product_id', '=', 'products.id'))
             ->leftJoin('product_images as img', function ($join) {
                 $join->on('img.product_id', '=', 'products.id')
-                     ->on('img.sort_order', '=', 'ms.min_sort');
+                    ->on('img.sort_order', '=', 'ms.min_sort');
             })
             ->where('products.id', $id)
             ->select([
@@ -92,6 +110,7 @@ class CardProductCatalogList extends Component
                 'products.short_description',
                 'products.price',
                 'products.sale_price',
+                'products.created_at',
                 DB::raw('COALESCE(thumb.path, img.path) as image_path'),
             ])
             ->selectSub($minVariantPriceSub, 'from_variant_price')
@@ -100,34 +119,37 @@ class CardProductCatalogList extends Component
             ->firstOrFail();
 
         $price = (float) ($row->price ?? 0);
-        $sale  = $row->sale_price !== null ? (float) $row->sale_price : null;
+        $sale = $row->sale_price !== null ? (float) $row->sale_price : null;
         $final = ($sale !== null && $sale > 0 && $sale < $price) ? $sale : $price;
         $discount = ($sale !== null && $sale > 0 && $sale < $price)
             ? (int) round((($price - $sale) / max(1, $price)) * 100)
             : null;
         $fromVariant = $row->from_variant_price !== null ? (float) $row->from_variant_price : null;
 
+        // Check if product is new (created within last 30 days)
+        $isNew = $row->created_at && $row->created_at->gt(now()->subDays(30));
+
         return [
-            'id'            => $row->id,
-            'slug'          => $row->slug,
-            'url'           => route('catalog.show', ['slug' => $row->slug]),
-            'name'          => $row->name,
-            // 'image'         => $this->toUrl($row->image_path),
-            'image'         => asset('images/placeholder.jpg'),
-            'price'         => $price,
-            'sale_price'    => $sale,
-            'final_price'   => $final,
-            'from_variant'  => $fromVariant,
-            'discount'      => $discount,
-            'rating_avg'    => $row->avg_rating !== null ? round((float) $row->avg_rating, 1) : null,
-            'rating_count'  => (int) ($row->reviews_count ?? 0),
-            'is_new'        => false,
+            'id' => $row->id,
+            'slug' => $row->slug,
+            'url' => route('catalog.show', ['slug' => $row->slug]),
+            'name' => $row->name,
+            'short_description' => $row->short_description,
+            'image' => $this->toUrl($row->image_path),
+            'price' => $price,
+            'sale_price' => $sale,
+            'final_price' => $final,
+            'from_variant' => $fromVariant,
+            'discount' => $discount,
+            'rating_avg' => $row->avg_rating !== null ? round((float) $row->avg_rating, 1) : null,
+            'rating_count' => (int) ($row->reviews_count ?? 0),
+            'is_new' => $isNew,
         ];
     }
 
     protected function toUrl(?string $path): string
     {
-        if (!$path || trim((string)$path) === '') {
+        if (! $path || trim((string) $path) === '') {
             return asset('images/placeholder.jpg');
         }
         if (preg_match('~^https?://~i', $path)) {
@@ -139,6 +161,7 @@ class CardProductCatalogList extends Component
             return asset(ltrim($path, '/'));
         }
     }
+
     public function render()
     {
         return view('livewire.card-product-catalog-list');

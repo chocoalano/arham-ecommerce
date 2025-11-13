@@ -13,12 +13,16 @@ class EloquentProductRepository implements ProductRepositoryInterface
 {
     public function catalog(array $filters = []): LengthAwarePaginator
     {
-        $perPage = (int)($filters['per_page'] ?? 12);
-        if ($perPage < 1 || $perPage > 100) { $perPage = 12; }
+        $perPage = (int) ($filters['per_page'] ?? 12);
+        if ($perPage < 1 || $perPage > 100) {
+            $perPage = 12;
+        }
 
         $query = Product::query()
             ->with([
-                'images' => function ($q) { $q->orderByDesc('is_thumbnail')->orderBy('sort_order'); },
+                'images' => function ($q) {
+                    $q->orderByDesc('is_thumbnail')->orderBy('sort_order');
+                },
                 'variants',
                 'categories',
             ])
@@ -26,19 +30,19 @@ class EloquentProductRepository implements ProductRepositoryInterface
             ->withCount('reviews');
 
         // Search
-        if (!empty($filters['q'])) {
+        if (! empty($filters['q'])) {
             $q = trim($filters['q']);
             $query->where(function (Builder $qq) use ($q) {
                 $qq->where('name', 'LIKE', "%{$q}%")
-                   ->orWhere('slug', 'LIKE', "%{$q}%")
-                   ->orWhere('sku', 'LIKE', "%{$q}%")
-                   ->orWhere('short_description', 'LIKE', "%{$q}%")
-                   ->orWhere('description', 'LIKE', "%{$q}%");
+                    ->orWhere('slug', 'LIKE', "%{$q}%")
+                    ->orWhere('sku', 'LIKE', "%{$q}%")
+                    ->orWhere('short_description', 'LIKE', "%{$q}%")
+                    ->orWhere('description', 'LIKE', "%{$q}%");
             });
         }
 
         // Category filter (accept id or slug)
-        if (!empty($filters['category'])) {
+        if (! empty($filters['category'])) {
             $cat = $filters['category'];
             $query->whereHas('categories', function (Builder $q) use ($cat) {
                 if (is_numeric($cat)) {
@@ -50,34 +54,34 @@ class EloquentProductRepository implements ProductRepositoryInterface
         }
 
         // Stock filter
-        if (!empty($filters['in_stock'])) {
+        if (! empty($filters['in_stock'])) {
             $query->where(function (Builder $q) {
                 $q->where('stock', '>', 0)
-                  ->orWhereHas('variants', function (Builder $v) {
-                      $v->where('stock', '>', 0);
-                  });
+                    ->orWhereHas('variants', function (Builder $v) {
+                        $v->where('stock', '>', 0);
+                    });
             });
         }
 
         // Discount filter (sale price exists at product OR variant level)
-        if (!empty($filters['has_discount'])) {
+        if (! empty($filters['has_discount'])) {
             $query->where(function (Builder $q) {
                 $q->whereNotNull('sale_price')
-                  ->orWhere(function (Builder $qq) {
-                      $qq->whereHas('variants', function (Builder $v) {
-                          $v->whereNotNull('sale_price');
-                      });
-                  });
+                    ->orWhere(function (Builder $qq) {
+                        $qq->whereHas('variants', function (Builder $v) {
+                            $v->whereNotNull('sale_price');
+                        });
+                    });
             });
         }
 
         // Price filter using COALESCE(sale_price, price)
         $priceCol = 'COALESCE(products.sale_price, products.price)';
         if (isset($filters['price_min']) && is_numeric($filters['price_min'])) {
-            $query->whereRaw("{$priceCol} >= ?", [(float)$filters['price_min']]);
+            $query->whereRaw("{$priceCol} >= ?", [(float) $filters['price_min']]);
         }
         if (isset($filters['price_max']) && is_numeric($filters['price_max'])) {
-            $query->whereRaw("{$priceCol} <= ?", [(float)$filters['price_max']]);
+            $query->whereRaw("{$priceCol} <= ?", [(float) $filters['price_max']]);
         }
 
         // Sorting
@@ -90,11 +94,11 @@ class EloquentProductRepository implements ProductRepositoryInterface
                 break;
             case 'price_asc':
                 $query->orderByRaw("{$priceCol} ASC NULLS LAST")
-                      ->orderBy('name');
+                    ->orderBy('name');
                 break;
             case 'price_desc':
                 $query->orderByRaw("{$priceCol} DESC NULLS LAST")
-                      ->orderBy('name');
+                    ->orderBy('name');
                 break;
             case 'name_desc':
                 $query->orderBy('name', 'desc');
@@ -120,11 +124,14 @@ class EloquentProductRepository implements ProductRepositoryInterface
     {
         $q = Product::query();
         // carry only restrictive filters that affect price domain meaningfully
-        if (!empty($filters['category'])) {
+        if (! empty($filters['category'])) {
             $cat = $filters['category'];
             $q->whereHas('categories', function (Builder $b) use ($cat) {
-                if (is_numeric($cat)) $b->where('product_categories.id', $cat);
-                else $b->where('product_categories.slug', $cat);
+                if (is_numeric($cat)) {
+                    $b->where('product_categories.id', $cat);
+                } else {
+                    $b->where('product_categories.slug', $cat);
+                }
             });
         }
 
@@ -133,8 +140,8 @@ class EloquentProductRepository implements ProductRepositoryInterface
         $max = (clone $q)->whereNotNull('price')->max(\DB::raw($priceCol));
 
         return [
-            'min' => (float)($min ?? 0),
-            'max' => (float)($max ?? 0),
+            'min' => (float) ($min ?? 0),
+            'max' => (float) ($max ?? 0),
         ];
     }
 
@@ -146,10 +153,28 @@ class EloquentProductRepository implements ProductRepositoryInterface
             'category' => $filters['category'] ?? null,
             'price_min' => $filters['price_min'] ?? null,
             'price_max' => $filters['price_max'] ?? null,
-            'in_stock' => !empty($filters['in_stock']) ? 1 : null,
-            'has_discount' => !empty($filters['has_discount']) ? 1 : null,
+            'in_stock' => ! empty($filters['in_stock']) ? 1 : null,
+            'has_discount' => ! empty($filters['has_discount']) ? 1 : null,
             'sort' => $filters['sort'] ?? null,
             'per_page' => $filters['per_page'] ?? null,
-        ], function ($v) { return !is_null($v) && $v !== ''; });
+        ], function ($v) {
+            return ! is_null($v) && $v !== '';
+        });
+    }
+
+    public function findBySlug(string $slug): ?Product
+    {
+        return Product::where('slug', $slug)
+            ->with([
+                'brand',
+                'images' => function ($q) {
+                    $q->orderByDesc('is_thumbnail')->orderBy('sort_order');
+                },
+                'variants',
+                'categories',
+            ])
+            ->withAvg('reviews as reviews_avg_rating', 'rating')
+            ->withCount('reviews')
+            ->first();
     }
 }

@@ -22,7 +22,7 @@
                 <!-- Products Links -->
                 <div class="col-12 col-lg-2 col-md-6 col-sm-6 mb-20 mb-lg-0 mb-xl-0 mb-md-35 mb-sm-35">
                     <div class="single-footer">
-                        <h3 class="footer-title mb-20">Products</h3>
+                        <h3 class="footer-title mb-20">Produk</h3>
                         <ul>
                             @foreach($productsLinks as $link)
                                 <li><a href="{{ $link['url'] }}">{{ $link['label'] }}</a></li>
@@ -34,13 +34,13 @@
                 <!-- Company Links (from Pages model) -->
                 <div class="col-12 col-lg-2 col-md-6 col-sm-6 mb-20 mb-lg-0 mb-xl-0 mb-md-35 mb-sm-35">
                     <div class="single-footer">
-                        <h3 class="footer-title mb-20">Our Company</h3>
+                        <h3 class="footer-title mb-20">Perusahaan Kami</h3>
                         <ul>
                             @forelse($companyLinks as $link)
                                 <li><a href="{{ $link['url'] }}">{{ $link['label'] }}</a></li>
                             @empty
-                                <li><a href="{{ route('about') }}">About Us</a></li>
-                                <li><a href="{{ route('catalog.index') }}">Products</a></li>
+                                <li><a href="{{ route('page.show', ['slug' => 'about']) }}">Tentang Kami</a></li>
+                                <li><a href="{{ route('catalog.index') }}">Produk</a></li>
                             @endforelse
                         </ul>
                     </div>
@@ -49,14 +49,10 @@
                 <!-- Newsletter & Address -->
                 <div class="col-12 col-lg-4 col-md-6 col-sm-6">
                     <div class="single-footer mb-35">
-                        <h3 class="footer-title mb-20">Newsletter</h3>
+                        <h3 class="footer-title mb-20">Berlangganan</h3>
                         <div class="newsletter-form mb-20">
                             <form wire:submit.prevent="subscribe" class="subscribe-form">
-                                <input
-                                    type="email"
-                                    wire:model="email"
-                                    placeholder="Your email address"
-                                    required>
+                                <input type="email" wire:model="email" placeholder="Alamat email kamu" required>
                                 <button type="submit" value="submit">
                                     <i class="lnr lnr-envelope"></i>
                                 </button>
@@ -64,28 +60,35 @@
                         </div>
 
                         @if (session()->has('newsletter_success'))
-                            <div class="alert alert-success mb-20" style="padding: 10px; border-radius: 4px; background: #d4edda; color: #155724; border: 1px solid #c3e6cb;">
+                            <div class="alert alert-success mb-20"
+                                style="padding: 10px; border-radius: 4px; background: #d4edda; color: #155724; border: 1px solid #c3e6cb;">
                                 {{ session('newsletter_success') }}
                             </div>
                         @endif
 
                         @if (session()->has('newsletter_error'))
-                            <div class="alert alert-danger mb-20" style="padding: 10px; border-radius: 4px; background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;">
+                            <div class="alert alert-danger mb-20"
+                                style="padding: 10px; border-radius: 4px; background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;">
                                 {{ session('newsletter_error') }}
                             </div>
                         @endif
 
                         @error('email')
-                            <div class="alert alert-danger mb-20" style="padding: 10px; border-radius: 4px; background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;">
+                            <div class="alert alert-danger mb-20"
+                                style="padding: 10px; border-radius: 4px; background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;">
                                 {{ $message }}
                             </div>
                         @enderror
                     </div>
                     <div class="single-footer">
-                        <h3 class="footer-title mb-20">Address</h3>
-                        <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Animi corporis, necessitatibus officiis dolor
-                            facere ipsum rem sed itaque ea eos.</p>
-                        <p>Jakarta, Indonesia</p>
+                        <h3 class="footer-title mb-20">Alamat</h3>
+                        @php
+                            $alamat = \App\Models\Page::where([
+                                'slug'=>'contact',
+                                'is_active' => true
+                            ])->first();
+                        @endphp
+                        <p>{{ $alamat->sections['contact_info']['address'] ?? 'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Animi corporis, necessitatibus officiis dolor facere ipsum rem sed itaque ea eos.' }}</p>
                     </div>
                 </div>
             </div>
@@ -114,10 +117,8 @@
                         <ul>
                             @foreach($socialLinks as $social)
                                 <li>
-                                    <a target="_blank"
-                                       href="{{ $social['url'] }}"
-                                       title="{{ $social['name'] }}"
-                                       rel="noopener noreferrer">
+                                    <a target="_blank" href="{{ $social['url'] }}" title="{{ $social['name'] }}"
+                                        rel="noopener noreferrer">
                                         <i class="fa {{ $social['icon'] }}"></i>
                                     </a>
                                 </li>
@@ -139,7 +140,8 @@
                         <ul>
                             @foreach($footerPages as $index => $page)
                                 <li>
-                                    <a href="{{ $page->slug === 'about' ? route('about') : route('page.show', $page->slug) }}">
+                                    <a
+                                        href="{{ $page->slug === 'about' ? route('about') : route('page.show', $page->slug) }}">
                                         {{ $page->title }}
                                     </a>
                                     @if(!$loop->last)
@@ -147,13 +149,15 @@
                                     @endif
                                 </li>
                             @endforeach
-                            <li>
-                                <a href="{{ route('auth.index') }}">My Account</a>
-                                <span class="separator">-</span>
-                            </li>
-                            <li>
-                                <a href="{{ route('auth.index') }}">Order Status</a>
-                            </li>
+                            @if (auth('customer')->check())
+                                <li>
+                                    <a href="{{ route('auth.index') }}">My Account</a>
+                                    <span class="separator">-</span>
+                                </li>
+                                <li>
+                                    <a href="{{ route('auth.index') }}">Order Status</a>
+                                </li>
+                            @endif
                         </ul>
                     </div>
                 </div>
