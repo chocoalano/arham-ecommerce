@@ -74,8 +74,7 @@ class BlogSlider extends Component
                     'title' => $a->title,
                     'slug' => $a->slug,
                     'excerpt' => $excerpt,
-                    // 'image'        => $this->toUrl($image),
-                    'image' => asset('images/placeholder.jpg'),
+                    'image'        => $this->toUrl($image) ?? asset('images/placeholder.jpg'),
                     'author' => optional($a->author)->name,
                     'date' => optional($a->published_at)->format('Y-m-d'),
                     'reading_time' => $readingTime, // dalam menit (perkiraan)

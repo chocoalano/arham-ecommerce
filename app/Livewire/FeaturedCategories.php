@@ -111,7 +111,7 @@ class FeaturedCategories extends Component
                     'slug' => $row->slug,
                     'name' => $row->name,
                     'count' => (int) ($row->products_active_count ?? 0),
-                    'image' => $this->toUrl($row->effective_image_path), // prioritaskan category.image_path → fallback product image → placeholder
+                    'image' => $this->toUrl($row->effective_image_path),
                     'url' => url('/category/'.$row->slug), // ganti ke route() jika punya route name
                 ];
             })->toArray();
