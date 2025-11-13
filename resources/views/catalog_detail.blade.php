@@ -235,7 +235,7 @@
                         </nav>
                         <div class="tab-content" id="nav-tabContent">
                             <div class="tab-pane fade show active" id="description" role="tabpanel" aria-labelledby="description-tab">
-                                <p class="product-desc">{!! nl2br(e($product->description)) !!}</p>
+                                <p class="product-desc">{!! $product->description !!}</p>
                             </div>
                             <div class="tab-pane fade" id="features" role="tabpanel" aria-labelledby="features-tab">
                                 <table class="table-data-sheet">
