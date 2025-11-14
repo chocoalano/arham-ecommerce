@@ -15,7 +15,7 @@
             @foreach($globalCategories->take(7) as $category)
                 @if($category->children->isNotEmpty())
                     <li class="menu-item-has-children">
-                        <a href="{{ route('catalog.index', ['category' => $category->slug]) }}">{{ $category->name }}</a>
+                        <a href="{{ route('catalog.index', ['cat[0]' => $category->slug]) }}">{{ $category->name }}</a>
 
                         <!-- Mega Category Menu Start -->
                         <ul class="category-mega-menu">
@@ -23,12 +23,12 @@
                                 <li class="menu-item-has-children">
                                     @foreach($chunk as $child)
                                         @if($loop->first)
-                                            <a class="megamenu-head" href="{{ route('catalog.index', ['category' => $child->slug]) }}">
+                                            <a class="megamenu-head" href="{{ route('catalog.index', ['cat[0]' => $child->slug]) }}">
                                                 {{ $child->name }}
                                             </a>
                                             <ul>
                                         @else
-                                            <li><a href="{{ route('catalog.index', ['category' => $child->slug]) }}">{{ $child->name }}</a></li>
+                                            <li><a href="{{ route('catalog.index', ['cat[0]' => $child->slug]) }}">{{ $child->name }}</a></li>
                                         @endif
                                     @endforeach
                                     </ul>
@@ -39,7 +39,7 @@
                     </li>
                 @else
                     <li>
-                        <a href="{{ route('catalog.index', ['category' => $category->slug]) }}">{{ $category->name }}</a>
+                        <a href="{{ route('catalog.index', ['cat[0]' => $category->slug]) }}">{{ $category->name }}</a>
                     </li>
                 @endif
             @endforeach
@@ -47,7 +47,7 @@
             @if($globalCategories->count() > 7)
                 @foreach($globalCategories->skip(7) as $category)
                     <li class="hidden">
-                        <a href="{{ route('catalog.index', ['category' => $category->slug]) }}">{{ $category->name }}</a>
+                        <a href="{{ route('catalog.index', ['cat[0]' => $category->slug]) }}">{{ $category->name }}</a>
                     </li>
                 @endforeach
                 <li>

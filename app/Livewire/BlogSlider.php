@@ -79,7 +79,7 @@ class BlogSlider extends Component
                     'date' => optional($a->published_at)->format('Y-m-d'),
                     'reading_time' => $readingTime, // dalam menit (perkiraan)
                     'category' => $category,
-                    'url' => url('/blog/'.$a->slug),              // ganti ke route('articles.show', $a)
+                    'url' => url('/article/'.$a->slug),              // ganti ke route('articles.show', $a)
                 ];
             })->toArray();
         });
