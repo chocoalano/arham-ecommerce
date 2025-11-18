@@ -1,0 +1,509 @@
+@extends('layouts.app')
+
+@section('title', 'Profil Saya')
+
+@push('styles')
+<style>
+    .myaccount-tab-menu a {
+        display: block;
+        padding: 15px 20px;
+        background: #f8f8f8;
+        border: 1px solid #ebebeb;
+        border-bottom: none;
+        font-weight: 500;
+        color: #333;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+    .myaccount-tab-menu a:last-child {
+        border-bottom: 1px solid #ebebeb;
+    }
+    .myaccount-tab-menu a:hover,
+    .myaccount-tab-menu a.active {
+        background: #333;
+        color: #fff;
+        border-color: #333;
+    }
+    .myaccount-tab-menu a i {
+        margin-right: 10px;
+        font-size: 16px;
+    }
+    .myaccount-content {
+        padding: 30px;
+        border: 1px solid #ebebeb;
+        background: #fff;
+    }
+    .myaccount-content h3 {
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #333;
+        padding-bottom: 10px;
+    }
+    .welcome {
+        background: #f8f8f8;
+        padding: 15px 20px;
+        border-left: 3px solid #333;
+    }
+    .welcome strong {
+        color: #333;
+    }
+    .logout {
+        color: #e74c3c;
+        text-decoration: underline;
+    }
+    .myaccount-table table thead {
+        background: #f8f8f8;
+    }
+    .myaccount-table table th,
+    .myaccount-table table td {
+        padding: 15px;
+        vertical-align: middle;
+    }
+    .account-details-form input,
+    .account-details-form select {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #ebebeb;
+        background: #f8f8f8;
+        transition: all 0.3s ease;
+    }
+    .account-details-form input:focus,
+    .account-details-form select:focus {
+        border-color: #333;
+        background: #fff;
+        outline: none;
+    }
+    .save-change-btn {
+        background: #333;
+        color: #fff;
+        border: none;
+        padding: 12px 30px;
+        font-weight: 500;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .save-change-btn:hover {
+        background: #555;
+    }
+    .edit-address-btn {
+        background: #333;
+        color: #fff;
+        padding: 10px 20px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    .edit-address-btn:hover {
+        background: #555;
+        color: #fff;
+    }
+    .badge {
+        padding: 5px 10px;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    .badge-warning { background: #f39c12; color: #fff; }
+    .badge-info { background: #3498db; color: #fff; }
+    .badge-success { background: #27ae60; color: #fff; }
+    .badge-danger { background: #e74c3c; color: #fff; }
+</style>
+@endpush
+
+@section('content')
+@livewire('breadscrumb')
+
+<div class="page-section mb-80">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <!-- Alert Messages -->
+                @if(session('success'))
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fa fa-check-circle"></i> {{ session('success') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                @endif
+
+                @if(session('error'))
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fa fa-exclamation-circle"></i> {{ session('error') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                @endif
+
+                <div class="row">
+                    <!-- My Account Tab Menu Start -->
+                    <div class="col-lg-3 col-12">
+                        <div class="myaccount-tab-menu nav" role="tablist">
+                            <a href="#dashboad" class="active" data-bs-toggle="tab">
+                                <i class="fa fa-dashboard"></i> Dashboard
+                            </a>
+                            <a href="#orders" data-bs-toggle="tab">
+                                <i class="fa fa-cart-arrow-down"></i> Orders
+                            </a>
+                            <a href="#address-edit" data-bs-toggle="tab">
+                                <i class="fa fa-map-marker"></i> Address
+                            </a>
+                            <a href="#account-info" data-bs-toggle="tab">
+                                <i class="fa fa-user"></i> Account Details
+                            </a>
+                            <a href="{{ route('auth.logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                <i class="fa fa-sign-out"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                    <!-- My Account Tab Menu End -->
+
+                    <!-- My Account Tab Content Start -->
+                    <div class="col-lg-9 col-12">
+                        <div class="tab-content" id="myaccountContent">
+                            <!-- Single Tab Content Start - Dashboard -->
+                            <div class="tab-pane fade show active" id="dashboad" role="tabpanel">
+                                <div class="myaccount-content">
+                                    <h3>Dashboard</h3>
+
+                                    <div class="welcome mb-20">
+                                        <p>Hello, <strong>{{ $customer->name }}</strong> (If Not <strong>{{ $customer->name }} !</strong>
+                                            <a href="#" class="logout" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                                Logout
+                                            </a>)
+                                        </p>
+                                    </div>
+
+                                    <p class="mb-0">From your account dashboard. you can easily check &amp; view your recent orders,
+                                        manage your shipping and billing addresses and edit your password and account details.</p>
+
+                                    <!-- Statistics -->
+                                    <div class="row mt-4">
+                                        <div class="col-md-4 mb-3">
+                                            <div class="alert alert-info text-center">
+                                                <h4 class="mb-0">{{ $stats['total_orders'] }}</h4>
+                                                <small>Total Orders</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <div class="alert alert-warning text-center">
+                                                <h4 class="mb-0">{{ $stats['pending_orders'] }}</h4>
+                                                <small>Pending Orders</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <div class="alert alert-success text-center">
+                                                <h4 class="mb-0">Rp {{ number_format($stats['total_spent'], 0, ',', '.') }}</h4>
+                                                <small>Total Spent</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Single Tab Content End -->
+
+                            <!-- Single Tab Content Start - Orders -->
+                            <div class="tab-pane fade" id="orders" role="tabpanel">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="stat-card">
+                                <div class="stat-number">{{ $stats['total_orders'] }}</div>
+                                <div class="stat-label">Total Pesanan</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                                <div class="stat-number">{{ $stats['pending_orders'] }}</div>
+                                <div class="stat-label">Menunggu Pembayaran</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                                <div class="stat-number">Rp {{ number_format($stats['total_spent'], 0, ',', '.') }}</div>
+                                <div class="stat-label">Total Belanja</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="content-card">
+                        <h5 class="mb-4">Pesanan Terakhir</h5>
+                        @forelse($recentOrders as $order)
+                            <div class="order-card">
+                                <div class="row align-items-center">
+                                    <div class="col-md-3">
+                                        <small class="text-muted d-block">Order #</small>
+                                        <strong>{{ $order->order_number }}</strong>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <small class="text-muted d-block">Tanggal</small>
+                                        {{ $order->created_at->format('d M Y') }}
+                                    </div>
+                                    <div class="col-md-2">
+                                        <small class="text-muted d-block">Total</small>
+                                        <strong>Rp {{ number_format($order->grand_total, 0, ',', '.') }}</strong>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <span class="order-status status-{{ $order->status }}">
+                                            {{ ucfirst($order->status) }}
+                                        </span>
+                                    </div>
+                                    <div class="col-md-2 text-end">
+                                        <a href="{{ route('checkout.thankyou', $order->order_number) }}" class="btn btn-sm btn-outline-primary">
+                                            Detail
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="text-center py-5">
+                                <i class="fa fa-shopping-bag fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">Belum ada pesanan</p>
+                                <a href="{{ route('catalog.index') }}" class="btn btn-primary">Mulai Belanja</a>
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+
+                {{-- Orders Tab --}}
+                <div class="tab-content d-none" id="orders">
+                    <div class="content-card">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="mb-0">Semua Pesanan</h5>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-secondary active">Semua</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary">Pending</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary">Processing</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary">Completed</button>
+                            </div>
+                        </div>
+
+                        @forelse($orders as $order)
+                            <div class="order-card">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h6 class="mb-1">Order #{{ $order->order_number }}</h6>
+                                        <small class="text-muted">{{ $order->created_at->format('d F Y, H:i') }}</small>
+                                    </div>
+                                    <span class="order-status status-{{ $order->status }}">
+                                        {{ ucfirst($order->status) }}
+                                    </span>
+                                </div>
+
+                                <div class="border-top pt-3">
+                                    @foreach($order->items->take(2) as $item)
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="me-3">
+                                                <small class="text-muted">{{ $item->quantity }}x</small>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="small">{{ $item->name }}</div>
+                                            </div>
+                                            <div>
+                                                <small>Rp {{ number_format($item->subtotal, 0, ',', '.') }}</small>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                    @if($order->items->count() > 2)
+                                        <small class="text-muted">+{{ $order->items->count() - 2 }} item lainnya</small>
+                                    @endif
+                                </div>
+
+                                <div class="border-top pt-3 mt-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>Total: Rp {{ number_format($order->grand_total, 0, ',', '.') }}</strong>
+                                        </div>
+                                        <div>
+                                            <a href="{{ route('checkout.thankyou', $order->order_number) }}" class="btn btn-sm btn-outline-primary me-2">
+                                                Lihat Detail
+                                            </a>
+                                            @if($order->status === 'pending')
+                                                <button class="btn btn-sm btn-primary">Bayar Sekarang</button>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="text-center py-5">
+                                <i class="fa fa-inbox fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">Belum ada pesanan</p>
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+
+                {{-- Addresses Tab --}}
+                <div class="tab-content d-none" id="addresses">
+                    <div class="content-card">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="mb-0">Alamat Saya</h5>
+                            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addAddressModal">
+                                <i class="fa fa-plus"></i> Tambah Alamat
+                            </button>
+                        </div>
+
+                        <div class="row">
+                            @forelse($addresses as $address)
+                                <div class="col-md-6 mb-3">
+                                    <div class="address-card {{ $address->is_default ? 'default' : '' }}">
+                                        @if($address->is_default)
+                                            <span class="default-badge">Utama</span>
+                                        @endif
+                                        <h6 class="mb-2">{{ $address->recipient_name }}</h6>
+                                        <p class="mb-1 small">{{ $address->phone }}</p>
+                                        <p class="mb-2 small text-muted">
+                                            {{ $address->address_line1 }}<br>
+                                            @if($address->address_line2)
+                                                {{ $address->address_line2 }}<br>
+                                            @endif
+                                            {{ $address->postal_code }}
+                                        </p>
+                                        <div class="mt-3">
+                                            <button class="btn btn-sm btn-outline-primary me-2">Edit</button>
+                                            @if(!$address->is_default)
+                                                <button class="btn btn-sm btn-outline-secondary me-2">Jadikan Utama</button>
+                                                <button class="btn btn-sm btn-outline-danger">Hapus</button>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="col-12">
+                                    <div class="text-center py-5">
+                                        <i class="fa fa-map-marker fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted">Belum ada alamat tersimpan</p>
+                                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAddressModal">
+                                            Tambah Alamat
+                                        </button>
+                                    </div>
+                                </div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Profile Tab --}}
+                <div class="tab-content d-none" id="profile">
+                    <div class="content-card">
+                        <h5 class="mb-4">Informasi Profil</h5>
+                        <form action="{{ route('auth.update', $customer->id) }}" method="POST">
+                            @csrf
+                            @method('PUT')
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Nama Lengkap</label>
+                                    <input type="text" name="name" class="form-control" value="{{ $customer->name }}" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" name="email" class="form-control" value="{{ $customer->email }}" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">No. Telepon</label>
+                                    <input type="text" name="phone" class="form-control" value="{{ $customer->phone }}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Tanggal Lahir</label>
+                                    <input type="date" name="birth_date" class="form-control" value="{{ $customer->birth_date }}">
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <label class="form-label">Gender</label>
+                                    <div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="gender" value="male" {{ $customer->gender === 'male' ? 'checked' : '' }}>
+                                            <label class="form-check-label">Laki-laki</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="gender" value="female" {{ $customer->gender === 'female' ? 'checked' : '' }}>
+                                            <label class="form-check-label">Perempuan</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                                <button type="reset" class="btn btn-outline-secondary">Batal</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                {{-- Security Tab --}}
+                <div class="tab-content d-none" id="security">
+                    <div class="content-card">
+                        <h5 class="mb-4">Ubah Password</h5>
+                        <form action="{{ route('auth.update', $customer->id) }}" method="POST">
+                            @csrf
+                            @method('PUT')
+                            <div class="mb-3">
+                                <label class="form-label">Password Lama</label>
+                                <input type="password" name="current_password" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Password Baru</label>
+                                <input type="password" name="password" class="form-control" required>
+                                <small class="text-muted">Minimal 8 karakter</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Konfirmasi Password Baru</label>
+                                <input type="password" name="password_confirmation" class="form-control" required>
+                            </div>
+                            <div class="mt-4">
+                                <button type="submit" class="btn btn-primary">Ubah Password</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+(function(){
+    'use strict';
+
+    // Tab Navigation
+    const navLinks = document.querySelectorAll('.profile-nav-link[data-tab]');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            const targetTab = this.getAttribute('data-tab');
+
+            // Remove active class from all links
+            navLinks.forEach(l => l.classList.remove('active'));
+
+            // Add active to clicked link
+            this.classList.add('active');
+
+            // Hide all tab contents
+            tabContents.forEach(content => content.classList.add('d-none'));
+
+            // Show target tab
+            document.getElementById(targetTab)?.classList.remove('d-none');
+        });
+    });
+
+    // Show success message if exists
+    @if(session('success'))
+        if (typeof window.showNotification === 'function') {
+            window.showNotification('success', '{{ session('success') }}');
+        } else if (window.toastr) {
+            toastr.success('{{ session('success') }}');
+        }
+    @endif
+
+    @if(session('error'))
+        if (typeof window.showNotification === 'function') {
+            window.showNotification('error', '{{ session('error') }}');
+        } else if (window.toastr) {
+            toastr.error('{{ session('error') }}');
+        }
+    @endif
+})();
+</script>
+@endpush
+@endsection
