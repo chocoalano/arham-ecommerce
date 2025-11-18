@@ -69,9 +69,9 @@ class ProductForm
                                         // Brand - cari atau buat jika ada brand di catalog
                                         if ($catalogProduct->brand) {
                                             $brand = \App\Models\Brand::firstOrCreate(
-                                                ['slug' => Str::slug($catalogProduct->brand)],
+                                                ['name' => Str::title($catalogProduct->brand)],
                                                 [
-                                                    'name' => $catalogProduct->brand,
+                                                    'slug' => Str::slug($catalogProduct->brand),
                                                     'is_active' => true,
                                                 ]
                                             );
