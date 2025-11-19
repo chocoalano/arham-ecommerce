@@ -139,7 +139,12 @@ class ProductForm
                             ->label('Slug URL')
                             ->required()
                             ->maxLength(255)
-                            ->unique(ignoreRecord: true)
+                            ->unique(
+                                table: 'products',
+                                column: 'slug',
+                                ignoreRecord: true,
+                                modifyRuleUsing: fn (\Illuminate\Validation\Rules\Unique $rule) => $rule->whereNull('deleted_at')
+                            )
                             ->disabled(fn (callable $get) => ! $get('catalog_product_id'))
                             ->readOnly(fn (callable $get) => (bool) $get('catalog_product_id'))
                             ->helperText('URL ramah SEO, akan dibuat otomatis dari nama produk'),
@@ -147,7 +152,12 @@ class ProductForm
                         TextInput::make('sku')
                             ->label('SKU')
                             ->required()
-                            ->unique(ignoreRecord: true)
+                            ->unique(
+                                table: 'products',
+                                column: 'sku',
+                                ignoreRecord: true,
+                                modifyRuleUsing: fn (\Illuminate\Validation\Rules\Unique $rule) => $rule->whereNull('deleted_at')
+                            )
                             ->maxLength(100)
                             ->disabled(fn (callable $get) => ! $get('catalog_product_id'))
                             ->readOnly(fn (callable $get) => (bool) $get('catalog_product_id'))
@@ -423,7 +433,12 @@ class ProductForm
                                 TextInput::make('sku')
                                     ->label('SKU Varian')
                                     ->required()
-                                    ->unique(ignoreRecord: true)
+                                    ->unique(
+                                        table: 'product_variants',
+                                        column: 'sku',
+                                        ignoreRecord: true,
+                                        modifyRuleUsing: fn (\Illuminate\Validation\Rules\Unique $rule) => $rule->whereNull('deleted_at')
+                                    )
                                     ->maxLength(255)
                                     ->disabled(fn (callable $get) => ! $get('../../catalog_product_id'))
                                     ->helperText('Kode unik untuk varian ini'),
