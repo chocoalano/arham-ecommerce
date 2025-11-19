@@ -2,17 +2,20 @@
 
 namespace App\Filament\Resources\Products\Tables;
 
+use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
+use Filament\Notifications\Notification;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
 
 class ProductsTable
 {
@@ -93,6 +96,54 @@ class ProductsTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
+                    BulkAction::make('set_active')
+                        ->label('Set Active')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records) {
+                            $count = 0;
+                            foreach ($records as $record) {
+                                $record->status = 'active';
+                                $record->save();
+
+                                // Also activate variants
+                                $record->variants()->update(['is_active' => true]);
+                                $count++;
+                            }
+
+                            Notification::make()
+                                ->success()
+                                ->title('Products Activated')
+                                ->body("{$count} product(s) and their variants have been set to active.")
+                                ->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
+
+                    BulkAction::make('set_inactive')
+                        ->label('Set Inactive')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records) {
+                            $count = 0;
+                            foreach ($records as $record) {
+                                $record->status = 'archived';
+                                $record->save();
+
+                                // Also deactivate variants
+                                $record->variants()->update(['is_active' => false]);
+                                $count++;
+                            }
+
+                            Notification::make()
+                                ->success()
+                                ->title('Products Deactivated')
+                                ->body("{$count} product(s) and their variants have been set to inactive.")
+                                ->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
+
                     DeleteBulkAction::make()
                         ->action(function ($records) {
                             foreach ($records as $record) {
