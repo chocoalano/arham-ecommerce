@@ -93,9 +93,33 @@ class ProductsTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
-                    RestoreBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->action(function ($records) {
+                            foreach ($records as $record) {
+                                // Soft delete variants first
+                                $record->variants()->delete();
+                                // Then soft delete the product
+                                $record->delete();
+                            }
+                        }),
+                    ForceDeleteBulkAction::make()
+                        ->action(function ($records) {
+                            foreach ($records as $record) {
+                                // Force delete variants first
+                                $record->variants()->forceDelete();
+                                // Then force delete the product
+                                $record->forceDelete();
+                            }
+                        }),
+                    RestoreBulkAction::make()
+                        ->action(function ($records) {
+                            foreach ($records as $record) {
+                                // Restore the product
+                                $record->restore();
+                                // Restore variants
+                                $record->variants()->restore();
+                            }
+                        }),
                 ]),
             ]);
     }
