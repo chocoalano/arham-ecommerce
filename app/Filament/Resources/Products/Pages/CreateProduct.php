@@ -110,6 +110,10 @@ class CreateProduct extends CreateRecord
 
         // If product exists and is soft deleted
         if ($existingProduct && $existingProduct->trashed()) {
+            // Store the existing product ID in session for header actions
+            session()->flash('pending_restore_product_id', $existingProduct->id);
+            session()->flash('pending_restore_sku', $data['sku']);
+
             Notification::make()
                 ->warning()
                 ->title('Product Already Exists (Deleted)')
@@ -117,11 +121,8 @@ class CreateProduct extends CreateRecord
                 ->persistent()
                 ->send();
 
-            // Store the existing product ID in session for header actions
-            session()->put('pending_restore_product_id', $existingProduct->id);
-
-            // Halt the creation process
-            $this->halt();
+            // Redirect to same page to show header actions
+            $this->redirect(static::getResource()::getUrl('create'), navigate: false);
         }
 
         // If product exists and is active
@@ -137,6 +138,7 @@ class CreateProduct extends CreateRecord
 
         // Clear session if exists
         session()->forget('pending_restore_product_id');
+        session()->forget('pending_restore_sku');
 
         // Create the product
         $product = static::getModel()::create($data);
