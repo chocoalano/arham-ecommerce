@@ -93,9 +93,9 @@ class ProductsTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
-                    RestoreBulkAction::make(),
+                    DeleteBulkAction::make()->label('Inactive'),
+                    ForceDeleteBulkAction::make()->label('Delete Permanent'),
+                    RestoreBulkAction::make()->label('Active'),
                 ]),
             ]);
     }
