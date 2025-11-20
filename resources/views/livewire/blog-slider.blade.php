@@ -5,8 +5,7 @@
             <div class="col-lg-12 text-center mb-40">
                 <div class="section-title">
                     <h2>Postingan <span>Artikel</span> Kami</h2>
-                    <p>Apakah Anda ingin menampilkan postingan dengan cara terbaik untuk menyoroti momen menarik dari
-                        artikel Anda?</p>
+                    <p>Maksimalkan daya tarik diri Anda! Lihat cara terbaik untuk menonjolkan bagian yang paling menarik pada diri anda dengan dukungan busana yang pas untuk anda gunakan.</p>
                 </div>
             </div>
         </div>
