@@ -100,29 +100,19 @@
     <!--=======  footer social link container  =======-->
     <div class="footer-social-link-container pt-15 pb-15 mb-60">
         <div class="container">
-            <div class="row align-items-center">
-                <div class="col-12 col-lg-6 col-md-7 mb-sm-15 text-start text-sm-center text-lg-start">
-                    <div class="app-download-area">
-                        <<span class="title">Keuntungan Belanja Sekarang:</span>
-                            <strong class="text-white">Gratis Ongkir dan Jaminan Pengembalian</strong>
-                            <p class="text-white">Nikmati layanan pengiriman gratis ke seluruh Indonesia* dan kemudahan pengembalian barang
-                                dalam 30 hari. **Belanja tanpa khawatir!**</p>
-                    </div>
-                </div>
-                <div class="col-12 col-lg-6 col-md-5 text-start text-sm-center text-md-end">
-                    <div class="social-link">
-                        <span class="title">Follow Us:</span>
-                        <ul>
-                            @foreach($socialLinks as $social)
-                                <li>
-                                    <a target="_blank" href="{{ $social['url'] }}" title="{{ $social['name'] }}"
-                                        rel="noopener noreferrer">
-                                        <i class="fa {{ $social['icon'] }}"></i>
-                                    </a>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
+            <div class="row align-items-center text-center">
+                <div class="social-link">
+                    <span class="title">Ikuti Kami:</span>
+                    <ul>
+                        @foreach($socialLinks as $social)
+                            <li>
+                                <a target="_blank" href="{{ $social['url'] }}" title="{{ $social['name'] }}"
+                                    rel="noopener noreferrer">
+                                    <i class="fa {{ $social['icon'] }}"></i>
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
                 </div>
             </div>
         </div>

@@ -26,6 +26,11 @@ class Footer extends Component
                 'title' => 'Produk & Penjualan',
                 'content' => 'Call: 1-877-345-6789',
             ],
+            [
+                'title' => 'Keuntungan Belanja Sekarang:',
+                'content' => 'Nikmati layanan pengiriman gratis ke seluruh Indonesia* dan kemudahan pengembalian barang
+                                dalam 30 hari. **Belanja tanpa khawatir!**',
+            ],
         ];
 
         // Social links
