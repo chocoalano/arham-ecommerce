@@ -14,6 +14,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'payment/notification',
         ]);
+
+        // Redirect unauthenticated customer guard to login page
+        $middleware->redirectGuestsTo(fn ($request) => route('login'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

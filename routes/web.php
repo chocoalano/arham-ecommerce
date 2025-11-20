@@ -4,6 +4,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
+// Login alias for auth redirects (required by Laravel auth)
+Route::get('/login', [App\Http\Controllers\LoginRegisterController::class, 'index'])->name('login');
+Route::get('/auth', [App\Http\Controllers\LoginRegisterController::class, 'index'])->name('auth');
+
 // Dynamic Pages (catch-all route - put at the end of routes)
 Route::get('/page/{slug}', [App\Http\Controllers\PageController::class, 'show'])->name('page.show');
 
@@ -82,10 +86,11 @@ Route::name('wishlist.')
     ->controller(App\Http\Controllers\WishlistController::class)
     ->group(function () {
         Route::get('/', 'index')->name('index');
+        Route::get('/count', 'count')->name('count');
         Route::post('/', 'store')->name('store');
-        Route::put('/{id}', 'update')->name('update');
-        Route::delete('/{id}', 'destroy')->name('destroy');
-        Route::get('/{slug}', 'show')->name('show');
+        Route::get('/items/{id}', 'show')->name('show')->where('id', '[0-9]+');
+        Route::put('/items/{id}', 'update')->name('update')->where('id', '[0-9]+');
+        Route::delete('/items/{id}', 'destroy')->name('destroy')->where('id', '[0-9]+');
     });
 
 Route::name('checkout.')

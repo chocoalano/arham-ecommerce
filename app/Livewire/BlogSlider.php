@@ -43,11 +43,19 @@ class BlogSlider extends Component
                 'author:id,name',
                 'categories:id,slug,name',
             ])
-            ->whereIn('status', ['published'])
-            ->select([
-                'id', 'author_id', 'title', 'slug', 'excerpt', 'content',
-                'status', 'published_at', 'meta', 'cover_image',
-            ]);
+            ->whereIn('status', ['published']);
+
+        // Filter hanya artikel yang sudah dipublikasikan
+        if ($onlyPublished) {
+            $q->where(function ($query) {
+                $query->whereNotNull('published_at')
+                    ->where('published_at', '<=', now());
+            });
+        }
+
+        // Order by pinned first, then by published_at
+        $q->orderByDesc('is_pinned')
+            ->orderByDesc('published_at');
 
         $articles = $q->limit($limit)->get();
 

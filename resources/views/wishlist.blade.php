@@ -27,7 +27,7 @@
 
                                     <tr
                                         data-item-id="{{ $item['id'] }}"
-                                        data-delete-url="{{ route('wishlist.destroy', $item['id']) }}"
+                                        data-delete-url="{{ route('wishlist.destroy', ['id' => $item['id']]) }}"
                                         data-product-id="{{ $card['id'] ?? '' }}"
                                         data-variant-id="{{ $item['purchasable_type'] === \App\Models\ProductVariant::class ? $item['purchasable_id'] : '' }}"
                                     >

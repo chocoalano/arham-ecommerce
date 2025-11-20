@@ -13,9 +13,6 @@ class WishlistController extends Controller
     /** Halaman wishlist */
     public function index(Request $request)
     {
-        if (! Auth::guard('customer')->check()) {
-            return redirect()->route('auth');
-        }
         $customerId = (int) Auth::guard('customer')->id();
 
         $items = $this->repo->items($customerId);
