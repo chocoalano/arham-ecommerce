@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Articles\Schemas;
 
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -23,9 +24,25 @@ class ArticleForm
                 TextInput::make('slug')
                     ->required(),
                 TextInput::make('excerpt'),
-                Textarea::make('content')
+                RichEditor::make('content')
                     ->required()
-                    ->columnSpanFull(),
+                    ->columnSpanFull()
+                    ->toolbarButtons([
+                        'bold',
+                        'italic',
+                        'underline',
+                        'strike',
+                        'link',
+                        'heading',
+                        'bulletList',
+                        'orderedList',
+                        'blockquote',
+                        'codeBlock',
+                        'undo',
+                        'redo',
+                    ])
+                    ->minHeight('500px')
+                    ->maxHeight('800px'),
                 Select::make('status')
                     ->options(['draft' => 'Draft', 'published' => 'Published', 'scheduled' => 'Scheduled'])
                     ->default('draft')
