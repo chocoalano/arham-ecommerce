@@ -28,18 +28,20 @@ class ArticleForm
                     ->required()
                     ->columnSpanFull()
                     ->toolbarButtons([
-                        'bold',
-                        'italic',
-                        'underline',
-                        'strike',
-                        'link',
-                        'heading',
-                        'bulletList',
-                        'orderedList',
+                        'attachFiles',
                         'blockquote',
+                        'bold',
+                        'bulletList',
                         'codeBlock',
-                        'undo',
+                        'h2',
+                        'h3',
+                        'italic',
+                        'link',
+                        'orderedList',
                         'redo',
+                        'strike',
+                        'underline',
+                        'undo',
                     ])
                     ->extraInputAttributes(['style' => 'min-height: 20rem; max-height: 50vh; overflow-y: auto;']),
                 Select::make('status')
