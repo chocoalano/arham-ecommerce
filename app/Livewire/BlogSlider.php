@@ -47,7 +47,6 @@ class BlogSlider extends Component
                 'id', 'author_id', 'title', 'slug', 'excerpt', 'content',
                 'status', 'published_at', 'meta', 'cover_image',
             ])
-            ->orderByDesc('is_pinned')
             ->orderByDesc('published_at');
 
         $articles = $q->limit($limit)->get();
