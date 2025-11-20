@@ -38,58 +38,59 @@ class BlogSlider extends Component
 
         // Hapus: return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($limit, $onlyPublished) {
 
-            $q = Article::query()
-                ->with([
-                    'author:id,name',
-                    'categories:id,slug,name',
-                ])
-                ->whereIn('status', ['published'])
-                ->select([
-                    'id', 'author_id', 'title', 'slug', 'excerpt', 'content',
-                    'status', 'published_at', 'meta',
-                ])
-                ->orderByDesc('is_pinned')
-                ->orderByDesc('published_at');
+        $q = Article::query()
+            ->with([
+                'author:id,name',
+                'categories:id,slug,name',
+            ])
+            ->whereIn('status', ['published'])
+            ->select([
+                'id', 'author_id', 'title', 'slug', 'excerpt', 'content',
+                'status', 'published_at', 'meta', 'cover_image',
+            ])
+            ->orderByDesc('is_pinned')
+            ->orderByDesc('published_at');
 
-            if ($onlyPublished) {
-                $q->whereNotNull('published_at')
-                    ->where('published_at', '<=', now());
-            }
+        if ($onlyPublished) {
+            $q->whereNotNull('published_at')
+                ->where('published_at', '<=', now());
+        }
 
-            $articles = $q->limit($limit)->get();
+        $articles = $q->limit($limit)->get();
 
-            return $articles->map(function (Article $a) {
-                $image = $this->pickImagePath($a);
-                $excerpt = $this->makeExcerpt($a->excerpt, $a->content);
-                $readingTime = $this->estimateReadingTime($a->content);
+        return $articles->map(function (Article $a) {
+            $image = $this->pickImagePath($a);
+            $excerpt = $this->makeExcerpt($a->excerpt, $a->content);
+            $readingTime = $this->estimateReadingTime($a->content);
 
-                $firstCategory = optional($a->categories->first());
-                $category = $firstCategory ? [
-                    'name' => $firstCategory->name,
-                    'url' => url('/blog/category/'.$firstCategory->slug),
-                ] : null;
+            $firstCategory = optional($a->categories->first());
+            $category = $firstCategory ? [
+                'name' => $firstCategory->name,
+                'url' => url('/blog/category/'.$firstCategory->slug),
+            ] : null;
 
-                return [
-                    'id' => $a->id,
-                    'title' => $a->title,
-                    'slug' => $a->slug,
-                    'excerpt' => $excerpt,
-                    'image'        => $this->toUrl($image) ?? asset('images/placeholder.jpg'),
-                    'author' => optional($a->author)->name,
-                    'date' => optional($a->published_at)->format('Y-m-d'),
-                    'reading_time' => $readingTime,
-                    'category' => $category,
-                    'url' => url('/article/'.$a->slug),
-                ];
-            })->toArray();
+            return [
+                'id' => $a->id,
+                'title' => $a->title,
+                'slug' => $a->slug,
+                'excerpt' => $excerpt,
+                'image' => $this->toUrl($image) ?? asset('images/placeholder.jpg'),
+                'author' => optional($a->author)->name,
+                'date' => optional($a->published_at)->format('Y-m-d'),
+                'reading_time' => $readingTime,
+                'category' => $category,
+                'url' => url('/article/'.$a->slug),
+            ];
+        })->toArray();
         // Hapus: });
     }
 
     /** Pilih path gambar artikel dari beberapa kandidat tanpa menyentuh SQL kolom yang belum tentu ada */
     protected function pickImagePath(Article $a): ?string
     {
-        // ... (fungsi ini tetap sama)
+        // Prioritaskan cover_image karena ini field utama di database
         $candidates = [
+            data_get($a, 'cover_image'),
             data_get($a, 'image_path'),
             data_get($a, 'cover_path'),
             data_get($a, 'thumbnail_path'),
@@ -141,11 +142,9 @@ class BlogSlider extends Component
         if (preg_match('~^https?://~i', $path)) {
             return $path;
         }
-        try {
-            return Storage::url($path);
-        } catch (\Throwable $e) {
-            return asset(ltrim($path, '/'));
-        }
+
+        // Gunakan storage link untuk cover_image
+        return asset('storage/'.ltrim($path, '/'));
     }
 
     public function render()
