@@ -3,10 +3,11 @@
 namespace App\Livewire;
 
 use App\Models\Article;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Component;
+
+// Hapus use Illuminate\Support\Facades\Cache; karena tidak lagi digunakan
 
 class BlogSlider extends Component
 {
@@ -23,32 +24,31 @@ class BlogSlider extends Component
     {
         $this->limit = $limit;
         $this->onlyPublished = $onlyPublished;
+        // Panggil fetchPosts yang sekarang tidak menggunakan cache
         $this->posts = $this->fetchPosts($this->limit, $this->onlyPublished);
     }
 
     /**
-     * Ambil artikel:
-     * - status ∈ {published, active} (supaya aman untuk variasi enum)
-     * - published_at <= now() bila $onlyPublished = true
-     * - eager load: author, categories (anti N+1)
-     * - SELECT hanya kolom aman & umum: id, title, slug, excerpt, content, status, published_at, author_id, meta
+     * Ambil artikel tanpa caching.
+     * Data selalu diambil langsung dari database.
      */
     protected function fetchPosts(int $limit, bool $onlyPublished): array
     {
-        $cacheKey = "blog_slider_articles_v1_{$limit}_".($onlyPublished ? 'published' : 'all');
+        // Hapus: $cacheKey = "blog_slider_articles_v1_{$limit}_".($onlyPublished ? 'published' : 'all');
 
-        return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($limit, $onlyPublished) {
+        // Hapus: return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($limit, $onlyPublished) {
+
             $q = Article::query()
                 ->with([
-                    'author:id,name',                    // pastikan relasi author() -> belongsTo(User::class,'author_id')
-                    'categories:id,slug,name',          // relasi categories() -> belongsToMany(ArticleCategory::class, ...)
+                    'author:id,name',
+                    'categories:id,slug,name',
                 ])
                 ->whereIn('status', ['published', 'active'])
                 ->select([
                     'id', 'author_id', 'title', 'slug', 'excerpt', 'content',
                     'status', 'published_at', 'meta',
                 ])
-                ->orderByDesc('is_pinned')            // jika ada flag pin
+                ->orderByDesc('is_pinned')
                 ->orderByDesc('published_at');
 
             if ($onlyPublished) {
@@ -59,14 +59,14 @@ class BlogSlider extends Component
             $articles = $q->limit($limit)->get();
 
             return $articles->map(function (Article $a) {
-                $image = $this->pickImagePath($a); // cari path gambar dari beberapa kandidat
+                $image = $this->pickImagePath($a);
                 $excerpt = $this->makeExcerpt($a->excerpt, $a->content);
                 $readingTime = $this->estimateReadingTime($a->content);
 
                 $firstCategory = optional($a->categories->first());
                 $category = $firstCategory ? [
                     'name' => $firstCategory->name,
-                    'url' => url('/blog/category/'.$firstCategory->slug), // ganti ke route() jika ada
+                    'url' => url('/blog/category/'.$firstCategory->slug),
                 ] : null;
 
                 return [
@@ -77,18 +77,18 @@ class BlogSlider extends Component
                     'image'        => $this->toUrl($image) ?? asset('images/placeholder.jpg'),
                     'author' => optional($a->author)->name,
                     'date' => optional($a->published_at)->format('Y-m-d'),
-                    'reading_time' => $readingTime, // dalam menit (perkiraan)
+                    'reading_time' => $readingTime,
                     'category' => $category,
-                    'url' => url('/article/'.$a->slug),              // ganti ke route('articles.show', $a)
+                    'url' => url('/article/'.$a->slug),
                 ];
             })->toArray();
-        });
+        // Hapus: });
     }
 
     /** Pilih path gambar artikel dari beberapa kandidat tanpa menyentuh SQL kolom yang belum tentu ada */
     protected function pickImagePath(Article $a): ?string
     {
-        // kandidat atribut langsung
+        // ... (fungsi ini tetap sama)
         $candidates = [
             data_get($a, 'image_path'),
             data_get($a, 'cover_path'),
@@ -97,7 +97,6 @@ class BlogSlider extends Component
             data_get($a, 'image'),
         ];
 
-        // kandidat dari meta JSON (misal disimpan di meta->image/cover/thumbnail)
         $meta = is_array($a->meta) ? $a->meta : json_decode((string) $a->meta, true);
         if (is_array($meta)) {
             $candidates[] = data_get($meta, 'image');
