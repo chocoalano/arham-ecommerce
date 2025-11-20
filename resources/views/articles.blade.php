@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+@livewire('breadscrumb')
 <div class="blog-page-container mb-80">
     <div class="container">
         <div class="row">

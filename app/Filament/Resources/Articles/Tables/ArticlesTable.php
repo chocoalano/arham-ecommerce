@@ -33,7 +33,9 @@ class ArticlesTable
                 TextColumn::make('reading_time')
                     ->numeric()
                     ->sortable(),
-                ImageColumn::make('cover_image'),
+                ImageColumn::make('cover_image')
+                    ->disk('public')
+                    ->defaultImageUrl(fn () => 'https://via.placeholder.com/80x60?text=No+Image'),
                 TextColumn::make('meta_title')
                     ->searchable(),
                 TextColumn::make('published_at')
