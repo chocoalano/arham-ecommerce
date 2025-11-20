@@ -84,11 +84,12 @@
                         <h3 class="footer-title mb-20">Alamat</h3>
                         @php
                             $alamat = \App\Models\Page::where([
-                                'slug'=>'contact',
+                                'slug' => 'contact',
                                 'is_active' => true
                             ])->first();
                         @endphp
-                        <p>{{ $alamat->sections['contact_info']['address'] ?? 'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Animi corporis, necessitatibus officiis dolor facere ipsum rem sed itaque ea eos.' }}</p>
+                        <p>{{ $alamat->sections['contact_info']['address'] ?? 'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Animi corporis, necessitatibus officiis dolor facere ipsum rem sed itaque ea eos.' }}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -102,13 +103,10 @@
             <div class="row align-items-center">
                 <div class="col-12 col-lg-6 col-md-7 mb-sm-15 text-start text-sm-center text-lg-start">
                     <div class="app-download-area">
-                        <span class="title">Free App:</span>
-                        <a target="_blank" href="#" class="app-download-btn apple-store">
-                            <i class="fa fa-apple"></i> Apple Store
-                        </a>
-                        <a target="_blank" href="#" class="app-download-btn google-play">
-                            <i class="fa fa-android"></i> Google play
-                        </a>
+                        <<span class="title">Keuntungan Belanja Sekarang:</span>
+                            <strong class="text-white">Gratis Ongkir dan Jaminan Pengembalian</strong>
+                            <p class="text-white">Nikmati layanan pengiriman gratis ke seluruh Indonesia* dan kemudahan pengembalian barang
+                                dalam 30 hari. **Belanja tanpa khawatir!**</p>
                     </div>
                 </div>
                 <div class="col-12 col-lg-6 col-md-5 text-start text-sm-center text-md-end">
