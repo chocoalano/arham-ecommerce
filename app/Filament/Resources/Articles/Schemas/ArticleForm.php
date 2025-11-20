@@ -33,6 +33,8 @@ class ArticleForm
                 TextInput::make('reading_time')
                     ->numeric(),
                 FileUpload::make('cover_image')
+                    ->disk('public')
+                    ->directory('cover_images')
                     ->image(),
                 TextInput::make('meta_title'),
                 Textarea::make('meta_description')
