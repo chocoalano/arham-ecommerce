@@ -19,7 +19,7 @@
                         @forelse($articles as $article)
                             @php
                                 $img = $article->cover_image ?? null;
-                                $img = $img ? (preg_match('~^https?://~', $img) ? $img : asset($img)) : 'https://via.placeholder.com/800x517?text=No+Image';
+                                $img = $img ? (preg_match('~^https?://~', $img) ? $img : Storage::url($img)) : 'https://via.placeholder.com/800x517?text=No+Image';
                                 $date = \Illuminate\Support\Carbon::parse($article->published_at ?? $article->created_at)
                                     ->locale(app()->getLocale() ?? 'id')
                                     ->translatedFormat('d F Y');
