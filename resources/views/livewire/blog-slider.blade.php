@@ -32,8 +32,8 @@
                                     </p>
 
                                     {{-- Jika ingin menampilkan excerpt singkat, buka komentar di bawah --}}
-                                    {{-- <p class="text-muted mb-2">{{ \Illuminate\Support\Str::limit($post['excerpt'], 110)
-                                        }}</p> --}}
+                                    <p class="text-muted mb-2">{{ \Illuminate\Support\Str::limit($post['content'], 110)
+                                        }}</p>
 
                                     <a href="{{ $post['url'] }}" class="readmore-btn">Lihat</a>
                                 </div>
