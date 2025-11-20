@@ -41,8 +41,7 @@ class ArticleForm
                         'undo',
                         'redo',
                     ])
-                    ->minHeight('500px')
-                    ->maxHeight('800px'),
+                    ->extraInputAttributes(['style' => 'min-height: 20rem; max-height: 50vh; overflow-y: auto;']),
                 Select::make('status')
                     ->options(['draft' => 'Draft', 'published' => 'Published', 'scheduled' => 'Scheduled'])
                     ->default('draft')
