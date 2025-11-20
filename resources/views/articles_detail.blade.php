@@ -11,7 +11,7 @@
                     <div class="row">
                         @php
                             $img = $article->cover_image ?? null;
-                            $img = $img ? (preg_match('~^https?://~', $img) ? $img : asset($img)) : 'https://via.placeholder.com/1200x600?text=No+Image';
+                            $img = $img ? (preg_match('~^https?://~', $img) ? $img : asset('storage/' . $img)) : 'https://via.placeholder.com/1200x600?text=No+Image';
                             $date = \Illuminate\Support\Carbon::parse($article->published_at ?? $article->created_at)
                                 ->locale(app()->getLocale() ?? 'id')
                                 ->translatedFormat('d F Y');
@@ -57,7 +57,7 @@
                             @foreach($related as $rel)
                                 @php
                                     $rimg = $rel->cover_image ?? null;
-                                    $rimg = $rimg ? (preg_match('~^https?://~', $rimg) ? $rimg : asset($rimg)) : 'https://via.placeholder.com/800x517?text=No+Image';
+                                    $rimg = $rimg ? (preg_match('~^https?://~', $rimg) ? $rimg : asset('storage/' . $rimg)) : 'https://via.placeholder.com/800x517?text=No+Image';
                                     $rurl = route('article.show', $rel->slug);
                                 @endphp
                                 <div class="col-lg-4 col-md-6">

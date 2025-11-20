@@ -43,7 +43,7 @@ class BlogSlider extends Component
                     'author:id,name',
                     'categories:id,slug,name',
                 ])
-                ->whereIn('status', ['published', 'active'])
+                ->whereIn('status', ['published'])
                 ->select([
                     'id', 'author_id', 'title', 'slug', 'excerpt', 'content',
                     'status', 'published_at', 'meta',
