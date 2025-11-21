@@ -16,7 +16,7 @@
                     <div class="col-lg-6 col-md-6 mb-sm-30" wire:key="cat-{{ $categories[0]['id'] }}">
                         <div class="banner">
                             <a href="{{ $categories[0]['url'] }}">
-                                <img width="540" height="560" src="{{ $categories[0]['image_27_28'] }}" class="img-fluid"
+                                <img width="540" height="560" src="{{ asset($categories[0]['image_27_28']) }}" class="img-fluid"
                                     alt="{{ $categories[0]['name'] }}" loading="lazy">
                             </a>
                             <span class="banner-category-title">
@@ -34,7 +34,7 @@
                             <div class="col-lg-12 col-md-12 mb-30" wire:key="cat-{{ $categories[1]['id'] }}">
                                 <div class="banner">
                                     <a href="{{ $categories[1]['url'] }}">
-                                        <img width="550" height="270" src="{{ $categories[1]['image_108_53'] }}"
+                                        <img width="550" height="270" src="{{ asset($categories[1]['image_108_53']) }}"
                                             class="img-fluid" alt="{{ $categories[1]['name'] }}" loading="lazy">
                                     </a>
                                     <span class="banner-category-title">
@@ -50,7 +50,7 @@
                             <div class="col-lg-6 col-md-6 col-sm-6 col-6" wire:key="cat-{{ $categories[2]['id'] }}">
                                 <div class="banner">
                                     <a href="{{ $categories[2]['url'] }}">
-                                        <img width="265" height="270" src="{{ $categories[2]['image_51_52'] }}"
+                                        <img width="265" height="270" src="{{ asset($categories[2]['image_51_52']) }}"
                                             class="img-fluid" alt="{{ $categories[2]['name'] }}" loading="lazy">
                                     </a>
                                     <span class="banner-category-title">
@@ -64,7 +64,7 @@
                             <div class="col-lg-6 col-md-6 col-sm-6 col-6" wire:key="cat-{{ $categories[3]['id'] }}">
                                 <div class="banner">
                                     <a href="{{ $categories[3]['url'] }}">
-                                        <img width="265" height="270" src="{{ $categories[3]['image_99_119'] }}"
+                                        <img width="265" height="270" src="{{ asset($categories[3]['image_99_119']) }}"
                                             class="img-fluid" alt="{{ $categories[3]['name'] }}" loading="lazy">
                                     </a>
                                     <span class="banner-category-title">
