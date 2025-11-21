@@ -60,6 +60,8 @@ class ProductCategoryResource extends Resource
                 Textarea::make('description')
                     ->columnSpanFull(),
                 FileUpload::make('image_path')
+                    ->disk('public')
+                    ->directory('category_images')
                     ->image(),
                 Toggle::make('is_active')
                     ->default(true)
