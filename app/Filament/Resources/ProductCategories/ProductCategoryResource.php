@@ -92,6 +92,11 @@ class ProductCategoryResource extends Resource
                     ->placeholder('-')
                     ->columnSpanFull(),
                 ImageEntry::make('image_path')
+                    ->disk('public')
+                    ->directory('category_images')
+                    ->label('Gambar'),
+                TextEntry::make('highlight')
+                    ->boolean()
                     ->placeholder('-'),
                 IconEntry::make('is_active')
                     ->boolean(),
