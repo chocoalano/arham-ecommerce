@@ -19,12 +19,13 @@ class Product extends Model
         'sku', 'name', 'slug', 'brand_id', 'short_description', 'description',
         'weight_gram', 'length_mm', 'width_mm', 'height_mm',
         'price', 'sale_price', 'is_featured', 'status', 'attributes',
-        'currency', 'meta_title', 'meta_description', 'stock',
+        'currency', 'meta_title', 'meta_description', 'stock', 'highlights',
     ];
 
     protected $casts = [
         'attributes' => 'array',
         'is_featured' => 'boolean',
+        'highlights' => 'boolean',
         'price' => 'decimal:2',
         'sale_price' => 'decimal:2',
         'stock' => 'integer',

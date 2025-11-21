@@ -112,6 +112,10 @@ class ProductForm
                                 }
                             })
                             ->helperText('Pilih produk yang sudah ada di pusat katalog untuk mengisi data produk ini secara otomatis'),
+                            Toggle::make('highlights')
+                                ->label('Produk Unggulan')
+                                ->default(false)
+                                ->helperText('Jika diaktifkan, semua data produk unggulan akan ditampilkan di homepage website'),
                     ]),
                 Section::make('Informasi Dasar')
                     ->description('Informasi utama produk')
