@@ -34,13 +34,13 @@ class CreateProduct extends CreateRecord
 
         return [
             Action::make('restore')
-                ->label('Restore Deleted Product')
+                ->label('Pulihkan Produk yang Dihapus')
                 ->icon('heroicon-o-arrow-path')
                 ->color('success')
                 ->requiresConfirmation()
-                ->modalHeading('Restore Product?')
-                ->modalDescription("Restore product with SKU: {$product->sku}")
-                ->modalSubmitActionLabel('Yes, Restore')
+                ->modalHeading('Pulihkan Produk?')
+                ->modalDescription("Pulihkan produk dengan SKU: {$product->sku}")
+                ->modalSubmitActionLabel('Ya, Pulihkan')
                 ->action(function () use ($product) {
                     DB::transaction(function () use ($product) {
                         // Restore the product
@@ -60,21 +60,21 @@ class CreateProduct extends CreateRecord
 
                     Notification::make()
                         ->success()
-                        ->title('Product Restored')
-                        ->body('The product and its variants have been successfully restored.')
+                        ->title('Produk Dipulihkan')
+                        ->body('Produk dan variannya berhasil dipulihkan.')
                         ->send();
 
                     // Redirect to edit page
                     return redirect()->to(ProductResource::getUrl('edit', ['record' => $product->id]));
                 }),
             Action::make('force_delete')
-                ->label('Delete Permanently')
+                ->label('Hapus Permanen')
                 ->icon('heroicon-o-trash')
                 ->color('danger')
                 ->requiresConfirmation()
-                ->modalHeading('Permanently Delete Product?')
-                ->modalDescription("This will permanently delete product with SKU: {$product->sku}. This action cannot be undone.")
-                ->modalSubmitActionLabel('Yes, Delete Permanently')
+                ->modalHeading('Hapus Produk Secara Permanen?')
+                ->modalDescription("Ini akan menghapus produk dengan SKU: {$product->sku} secara permanen. Tindakan ini **tidak dapat dibatalkan**.")
+                ->modalSubmitActionLabel('Ya, Hapus Permanen')
                 ->action(function () use ($product) {
                     DB::transaction(function () use ($product) {
                         // Force delete all morphMany relations first
@@ -111,15 +111,15 @@ class CreateProduct extends CreateRecord
 
                     Notification::make()
                         ->success()
-                        ->title('Product Permanently Deleted')
-                        ->body('The product has been permanently deleted. You can now create a new product.')
+                        ->title('Produk Dihapus Permanen')
+                        ->body('Produk telah dihapus secara permanen. Anda sekarang dapat membuat produk baru.')
                         ->send();
 
                     // Stay on create page
                     return redirect()->to(ProductResource::getUrl('create'));
                 }),
             Action::make('cancel')
-                ->label('Cancel')
+                ->label('Batal')
                 ->icon('heroicon-o-x-mark')
                 ->color('gray')
                 ->action(function () {
@@ -127,8 +127,8 @@ class CreateProduct extends CreateRecord
 
                     Notification::make()
                         ->info()
-                        ->title('Cancelled')
-                        ->body('You can create a product with a different SKU.')
+                        ->title('Dibatalkan')
+                        ->body('Anda dapat membuat produk dengan SKU yang berbeda.')
                         ->send();
                 }),
         ];
@@ -158,8 +158,8 @@ class CreateProduct extends CreateRecord
 
                 Notification::make()
                     ->warning()
-                    ->title('Product Already Exists (Deleted)')
-                    ->body("A product with SKU **{$data['sku']}** already exists but has been deleted. Use the action buttons above to restore or permanently delete it.")
+                    ->title('Produk Sudah Ada (Dihapus)')
+                    ->body("Produk dengan SKU **{$data['sku']}** sudah ada tetapi telah dihapus. Gunakan tombol aksi di atas untuk memulihkan atau menghapusnya secara permanen.")
                     ->persistent()
                     ->send();
 
@@ -171,8 +171,8 @@ class CreateProduct extends CreateRecord
             if ($existingProduct) {
                 Notification::make()
                     ->danger()
-                    ->title('Product Already Exists')
-                    ->body("A product with SKU **{$data['sku']}** already exists and is active.")
+                    ->title('Produk Sudah Ada')
+                    ->body("Produk dengan SKU **{$data['sku']}** sudah ada dan aktif.")
                     ->send();
 
                 $this->halt();
@@ -187,8 +187,8 @@ class CreateProduct extends CreateRecord
             if ($existingSlug) {
                 Notification::make()
                     ->danger()
-                    ->title('Slug Already Exists')
-                    ->body("A product with slug **{$data['slug']}** already exists. Please use a different slug.")
+                    ->title('Slug Sudah Ada')
+                    ->body("Produk dengan slug **{$data['slug']}** sudah ada. Harap gunakan slug yang berbeda.")
                     ->send();
 
                 $this->halt();
@@ -202,8 +202,8 @@ class CreateProduct extends CreateRecord
                 if (! empty($duplicateVariantSkus)) {
                     Notification::make()
                         ->danger()
-                        ->title('Duplicate Variant SKUs')
-                        ->body('Some variant SKUs are duplicated: '.implode(', ', array_unique($duplicateVariantSkus)))
+                        ->title('SKU Varian Duplikat')
+                        ->body('Beberapa SKU varian terduplikasi: '.implode(', ', array_unique($duplicateVariantSkus)))
                         ->send();
 
                     $this->halt();
@@ -218,8 +218,8 @@ class CreateProduct extends CreateRecord
                 if (! empty($existingVariantSkus)) {
                     Notification::make()
                         ->danger()
-                        ->title('Variant SKU Already Exists')
-                        ->body('These variant SKUs already exist: '.implode(', ', $existingVariantSkus))
+                        ->title('SKU Varian Sudah Ada')
+                        ->body('SKU varian ini sudah ada: '.implode(', ', $existingVariantSkus))
                         ->send();
 
                     $this->halt();
@@ -274,8 +274,8 @@ class CreateProduct extends CreateRecord
     {
         Notification::make()
             ->success()
-            ->title('Product Created')
-            ->body('The product has been successfully created.')
+            ->title('Produk Berhasil Dibuat')
+            ->body('Produk telah berhasil dibuat.')
             ->send();
     }
 
