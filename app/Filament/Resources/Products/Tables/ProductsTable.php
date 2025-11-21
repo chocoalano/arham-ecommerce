@@ -145,31 +145,118 @@ class ProductsTable
                         ->deselectRecordsAfterCompletion(),
 
                     DeleteBulkAction::make()
-                        ->action(function ($records) {
+                        ->modalHeading('Hapus Produk ke Trash')
+                        ->modalDescription(function ($records) {
+                            $totalProducts = $records->count();
+                            $totalVariants = 0;
+
                             foreach ($records as $record) {
-                                // Soft delete variants first
-                                $record->variants()->delete();
-                                // Then soft delete the product
+                                $totalVariants += $record->variants()->count();
+                            }
+
+                            return "Anda akan menghapus **{$totalProducts} produk** dan **{$totalVariants} varian** ke trash (soft delete).\n\n".
+                                "✅ Data masih bisa dipulihkan kembali\n".
+                                "✅ File gambar tetap aman di storage\n".
+                                "✅ Relasi data tetap terjaga\n\n".
+                                "💡 **Tip:** Gunakan filter 'Only Trashed' untuk melihat produk yang sudah dihapus.";
+                        })
+                        ->successNotificationTitle('Produk Dipindahkan ke Trash')
+                        ->action(function ($records) {
+                            $count = $records->count();
+                            foreach ($records as $record) {
+                                // Soft delete handled by Product model boot method
+                                // Will cascade to variants
                                 $record->delete();
                             }
+
+                            Notification::make()
+                                ->success()
+                                ->title('Berhasil Dipindahkan ke Trash')
+                                ->body("{$count} produk dan variannya telah dipindahkan ke trash. Data masih bisa dipulihkan.")
+                                ->send();
                         }),
                     ForceDeleteBulkAction::make()
-                        ->action(function ($records) {
+                        ->modalHeading('⚠️ PERINGATAN: Hapus Permanen Produk')
+                        ->modalDescription(function ($records) {
+                            $totalProducts = $records->count();
+                            $totalVariants = 0;
+                            $totalImages = 0;
+                            $totalReviews = 0;
+                            $totalWishlist = 0;
+                            $totalCart = 0;
+                            $totalOrderItems = 0;
+
                             foreach ($records as $record) {
-                                // Force delete variants first
-                                $record->variants()->forceDelete();
-                                // Then force delete the product
+                                $totalVariants += $record->variants()->withTrashed()->count();
+                                $totalImages += $record->images()->count();
+                                $totalReviews += $record->reviews()->count();
+                                $totalWishlist += $record->wishlistItems()->count();
+                                $totalCart += $record->cartItems()->count();
+                                $totalOrderItems += $record->orderItems()->count();
+                            }
+
+                            return "**TINDAKAN INI AKAN MENGHAPUS PERMANEN:**\n\n".
+                                "📦 **{$totalProducts} Produk** yang dipilih\n\n".
+                                "**Data yang akan ikut terhapus:**\n".
+                                "• {$totalVariants} Varian Produk\n".
+                                "• {$totalImages} Gambar Produk\n".
+                                "• {$totalReviews} Review/Rating\n".
+                                "• {$totalWishlist} Item Wishlist\n".
+                                "• {$totalCart} Item Keranjang\n".
+                                "• {$totalOrderItems} Item di Order\n".
+                                "• Semua relasi kategori\n\n".
+                                "⚠️ **PERINGATAN KERAS:** Tindakan ini **TIDAK DAPAT DIBATALKAN**. \n".
+                                "Semua data akan hilang **SELAMANYA** dari database!\n\n".
+                                'File gambar fisik juga akan **DIHAPUS** dari storage.';
+                        })
+                        ->modalIcon('heroicon-o-exclamation-triangle')
+                        ->modalIconColor('danger')
+                        ->modalSubmitActionLabel('Ya, Hapus Permanen Selamanya')
+                        ->successNotificationTitle('Produk Dihapus Permanen')
+                        ->action(function ($records) {
+                            $count = $records->count();
+                            foreach ($records as $record) {
+                                // Force delete handled by Product model boot method
+                                // Will cascade to variants and all related data
                                 $record->forceDelete();
                             }
+
+                            Notification::make()
+                                ->success()
+                                ->title('Penghapusan Permanen Selesai')
+                                ->body("{$count} produk dan semua data relasinya telah dihapus permanen dari database.")
+                                ->send();
                         }),
                     RestoreBulkAction::make()
-                        ->action(function ($records) {
+                        ->modalHeading('Pulihkan Produk dari Trash')
+                        ->modalDescription(function ($records) {
+                            $totalProducts = $records->count();
+                            $totalVariants = 0;
+
                             foreach ($records as $record) {
-                                // Restore the product
-                                $record->restore();
-                                // Restore variants
-                                $record->variants()->restore();
+                                $totalVariants += $record->variants()->withTrashed()->count();
                             }
+
+                            return "Anda akan memulihkan **{$totalProducts} produk** dan **{$totalVariants} varian** dari trash.\n\n".
+                                "✅ Produk akan kembali aktif\n".
+                                "✅ Semua varian akan dipulihkan\n".
+                                "✅ Relasi data akan kembali normal\n\n".
+                                '💡 Produk akan muncul kembali di daftar produk aktif.';
+                        })
+                        ->successNotificationTitle('Produk Berhasil Dipulihkan')
+                        ->action(function ($records) {
+                            $count = $records->count();
+                            foreach ($records as $record) {
+                                // Restore handled by Product model boot method
+                                // Will cascade to variants
+                                $record->restore();
+                            }
+
+                            Notification::make()
+                                ->success()
+                                ->title('Berhasil Dipulihkan')
+                                ->body("{$count} produk dan semua variannya telah berhasil dipulihkan dari trash.")
+                                ->send();
                         }),
                 ]),
             ]);

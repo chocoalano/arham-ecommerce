@@ -112,10 +112,10 @@ class ProductForm
                                 }
                             })
                             ->helperText('Pilih produk yang sudah ada di pusat katalog untuk mengisi data produk ini secara otomatis'),
-                            Toggle::make('highlights')
-                                ->label('Produk Unggulan')
-                                ->default(false)
-                                ->helperText('Jika diaktifkan, semua data produk unggulan akan ditampilkan di homepage website'),
+                        Toggle::make('highlights')
+                            ->label('Produk Unggulan')
+                            ->default(false)
+                            ->helperText('Jika diaktifkan, semua data produk unggulan akan ditampilkan di homepage website'),
                     ]),
                 Section::make('Informasi Dasar')
                     ->description('Informasi utama produk')
@@ -437,35 +437,15 @@ class ProductForm
                                 TextInput::make('sku')
                                     ->label('SKU Varian')
                                     ->required()
-                                    ->unique(
-                                        table: 'product_variants',
-                                        column: 'sku',
-                                        ignoreRecord: true,
-                                        modifyRuleUsing: fn (\Illuminate\Validation\Rules\Unique $rule) => $rule->whereNull('deleted_at')
-                                    )
                                     ->maxLength(255)
                                     ->disabled(fn (callable $get) => ! $get('../../catalog_product_id'))
                                     ->helperText('Kode unik untuk varian ini'),
 
-                                Select::make('color')
+                                TextInput::make('color')
                                     ->label('Warna')
-                                    ->options([
-                                        'red' => 'Merah',
-                                        'blue' => 'Biru',
-                                        'green' => 'Hijau',
-                                        'yellow' => 'Kuning',
-                                        'black' => 'Hitam',
-                                        'white' => 'Putih',
-                                        'pink' => 'Pink',
-                                        'purple' => 'Ungu',
-                                        'orange' => 'Oranye',
-                                        'brown' => 'Coklat',
-                                        'gray' => 'Abu-abu',
-                                    ])
-                                    ->searchable()
-                                    ->native(false)
+                                    ->maxLength(100)
                                     ->disabled(fn (callable $get) => ! $get('../../catalog_product_id'))
-                                    ->helperText('Pilih warna varian'),
+                                    ->helperText('Tentukan warna varian (opsional)'),
 
                                 Select::make('size')
                                     ->label('Ukuran')

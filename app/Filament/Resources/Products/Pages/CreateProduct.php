@@ -4,7 +4,6 @@ namespace App\Filament\Resources\Products\Pages;
 
 use App\Filament\Resources\Products\ProductResource;
 use App\Models\Product;
-use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -44,16 +43,8 @@ class CreateProduct extends CreateRecord
                 ->action(function () use ($product) {
                     DB::transaction(function () use ($product) {
                         // Restore the product
+                        // Variants will be restored automatically via Product model boot method
                         $product->restore();
-
-                        // Restore variants
-                        $product->variants()->restore();
-
-                        // Restore images (if soft deleted)
-                        // Note: ProductImage doesn't use SoftDeletes, but keeping for future-proofing
-                        if (method_exists($product->images()->getModel(), 'restore')) {
-                            $product->images()->restore();
-                        }
                     });
 
                     session()->forget('pending_restore_product_id');
@@ -72,38 +63,35 @@ class CreateProduct extends CreateRecord
                 ->icon('heroicon-o-trash')
                 ->color('danger')
                 ->requiresConfirmation()
-                ->modalHeading('Hapus Produk Secara Permanen?')
-                ->modalDescription("Ini akan menghapus produk dengan SKU: {$product->sku} secara permanen. Tindakan ini **tidak dapat dibatalkan**.")
+                ->modalHeading('⚠️ PERINGATAN: Hapus Permanen Produk')
+                ->modalDescription(function () use ($product) {
+                    $variantsCount = $product->variants()->withTrashed()->count();
+                    $imagesCount = $product->images()->count();
+                    $reviewsCount = $product->reviews()->count();
+                    $wishlistCount = $product->wishlistItems()->count();
+                    $cartCount = $product->cartItems()->count();
+                    $orderItemsCount = $product->orderItems()->count();
+
+                    return "**TINDAKAN INI AKAN MENGHAPUS PERMANEN:**\n\n".
+                        "📦 Produk: **{$product->sku}** - {$product->name}\n\n".
+                        "**Data yang akan ikut terhapus:**\n".
+                        "• {$variantsCount} Varian Produk\n".
+                        "• {$imagesCount} Gambar Produk\n".
+                        "• {$reviewsCount} Review/Rating\n".
+                        "• {$wishlistCount} Item Wishlist\n".
+                        "• {$cartCount} Item Keranjang\n".
+                        "• {$orderItemsCount} Item di Order\n".
+                        "• Semua relasi kategori\n\n".
+                        "⚠️ **PERINGATAN:** Tindakan ini **TIDAK DAPAT DIBATALKAN**. Semua data akan hilang selamanya!\n\n".
+                        "Ketik 'HAPUS' untuk melanjutkan.";
+                })
                 ->modalSubmitActionLabel('Ya, Hapus Permanen')
+                ->modalIcon('heroicon-o-exclamation-triangle')
+                ->modalIconColor('danger')
                 ->action(function () use ($product) {
                     DB::transaction(function () use ($product) {
-                        // Force delete all morphMany relations first
-                        $product->reviews()->forceDelete();
-                        $product->wishlistItems()->forceDelete();
-                        $product->cartItems()->forceDelete();
-                        $product->orderItems()->forceDelete();
-
-                        // Force delete variants and their relations
-                        $variants = $product->variants()->withTrashed()->get();
-                        foreach ($variants as $variant) {
-                            $variant->reviews()->forceDelete();
-                            $variant->wishlistItems()->forceDelete();
-                            $variant->cartItems()->forceDelete();
-                            $variant->orderItems()->forceDelete();
-                        }
-                        $product->variants()->forceDelete();
-
-                        // Force delete images and their files
-                        $images = $product->images()->get();
-                        foreach ($images as $image) {
-                            $this->deleteImageFiles($image);
-                        }
-                        $product->images()->forceDelete();
-
-                        // Detach categories (many-to-many)
-                        $product->categories()->detach();
-
                         // Force delete the product
+                        // Cascade deletes handled by Product model boot method
                         $product->forceDelete();
                     });
 
@@ -194,32 +182,46 @@ class CreateProduct extends CreateRecord
                 $this->halt();
             }
 
-            // Check for duplicate variant SKUs before creating
+            // Check for duplicate variant SKUs in current form data
             if (isset($data['variants']) && is_array($data['variants'])) {
-                $variantSkus = array_column($data['variants'], 'sku');
+                $variantSkus = array_filter(array_column($data['variants'], 'sku'));
+
+                // Check if all variants have SKU
+                if (count($variantSkus) !== count($data['variants'])) {
+                    Notification::make()
+                        ->danger()
+                        ->title('SKU Varian Kosong')
+                        ->body('Semua varian harus memiliki SKU yang valid.')
+                        ->send();
+
+                    $this->halt();
+                }
+
                 $duplicateVariantSkus = array_diff_assoc($variantSkus, array_unique($variantSkus));
 
                 if (! empty($duplicateVariantSkus)) {
                     Notification::make()
                         ->danger()
                         ->title('SKU Varian Duplikat')
-                        ->body('Beberapa SKU varian terduplikasi: '.implode(', ', array_unique($duplicateVariantSkus)))
+                        ->body('Beberapa SKU varian terduplikasi dalam form: '.implode(', ', array_unique($duplicateVariantSkus)))
                         ->send();
 
                     $this->halt();
                 }
 
-                // Check if variant SKUs exist in database (including soft deleted)
-                $existingVariantSkus = ProductVariant::withTrashed()
+                // Check if variant SKUs exist in OTHER products (not this product)
+                // This allows updating existing variants for the same product
+                $existingVariantsInOtherProducts = ProductVariant::withTrashed()
                     ->whereIn('sku', $variantSkus)
+                    ->where('product_id', '!=', $data['id'] ?? 0) // Exclude current product if editing
                     ->pluck('sku')
                     ->toArray();
 
-                if (! empty($existingVariantSkus)) {
+                if (! empty($existingVariantsInOtherProducts)) {
                     Notification::make()
                         ->danger()
-                        ->title('SKU Varian Sudah Ada')
-                        ->body('SKU varian ini sudah ada: '.implode(', ', $existingVariantSkus))
+                        ->title('SKU Varian Sudah Digunakan Produk Lain')
+                        ->body('SKU varian ini sudah digunakan produk lain: '.implode(', ', $existingVariantsInOtherProducts))
                         ->send();
 
                     $this->halt();
@@ -248,10 +250,29 @@ class CreateProduct extends CreateRecord
                 $product->categories()->sync($categories);
             }
 
-            // Create variants manually to ensure no duplicates
+            // Create or update variants using updateOrCreate based on SKU
             if (! empty($variants)) {
+                $processedSkus = [];
+
                 foreach ($variants as $variantData) {
-                    $product->variants()->create($variantData);
+                    if (isset($variantData['sku'])) {
+                        // Use updateOrCreate to handle existing variants by SKU
+                        $product->variants()->updateOrCreate(
+                            [
+                                'sku' => $variantData['sku'],
+                            ],
+                            array_merge($variantData, ['product_id' => $product->id])
+                        );
+
+                        $processedSkus[] = $variantData['sku'];
+                    }
+                }
+
+                // Delete variants that are not in the current list (cleanup)
+                if (! empty($processedSkus)) {
+                    $product->variants()
+                        ->whereNotIn('sku', $processedSkus)
+                        ->delete();
                 }
             }
 
@@ -282,25 +303,5 @@ class CreateProduct extends CreateRecord
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
-    }
-
-    /**
-     * Delete image files from storage
-     */
-    protected function deleteImageFiles(ProductImage $image): void
-    {
-        $paths = [
-            $image->path,
-            $image->path_ratio_27_28,
-            $image->path_ratio_108_53,
-            $image->path_ratio_51_52,
-            $image->path_ratio_99_119,
-        ];
-
-        foreach ($paths as $path) {
-            if ($path && \Storage::disk('public')->exists($path)) {
-                \Storage::disk('public')->delete($path);
-            }
-        }
     }
 }

@@ -23,6 +23,23 @@ class ProductVariant extends Model
         'sale_price' => 'decimal:2',
     ];
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Handle cascading deletes for variant relations
+        static::deleting(function ($variant) {
+            if ($variant->isForceDeleting()) {
+                // Force delete: remove all morphMany relations
+                $variant->reviews()->forceDelete();
+                $variant->wishlistItems()->forceDelete();
+                $variant->cartItems()->forceDelete();
+                $variant->orderItems()->forceDelete();
+            }
+            // Soft delete: relations stay intact (can be restored)
+        });
+    }
+
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);

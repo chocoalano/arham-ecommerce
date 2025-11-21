@@ -18,16 +18,107 @@ class EditProduct extends EditRecord
     {
         return [
             ViewAction::make(),
-            DeleteAction::make(),
-            ForceDeleteAction::make(),
-            RestoreAction::make(),
+            DeleteAction::make()
+                ->modalHeading('Hapus Produk ke Trash')
+                ->modalDescription(function () {
+                    $variantsCount = $this->record->variants()->count();
+
+                    return "Anda akan menghapus produk **{$this->record->sku}** - {$this->record->name} dan **{$variantsCount} varian** ke trash.\n\n".
+                        "✅ Data masih bisa dipulihkan kembali\n".
+                        "✅ File gambar tetap aman di storage\n".
+                        "✅ Relasi data tetap terjaga\n\n".
+                        '💡 **Tip:** Data yang dihapus masih bisa dipulihkan dari menu trash.';
+                })
+                ->successNotificationTitle('Produk Dipindahkan ke Trash'),
+            ForceDeleteAction::make()
+                ->modalHeading('⚠️ PERINGATAN: Hapus Permanen Produk')
+                ->modalDescription(function () {
+                    $variantsCount = $this->record->variants()->withTrashed()->count();
+                    $imagesCount = $this->record->images()->count();
+                    $reviewsCount = $this->record->reviews()->count();
+                    $wishlistCount = $this->record->wishlistItems()->count();
+                    $cartCount = $this->record->cartItems()->count();
+                    $orderItemsCount = $this->record->orderItems()->count();
+
+                    return "**TINDAKAN INI AKAN MENGHAPUS PERMANEN:**\n\n".
+                        "📦 Produk: **{$this->record->sku}** - {$this->record->name}\n\n".
+                        "**Data yang akan ikut terhapus:**\n".
+                        "• {$variantsCount} Varian Produk\n".
+                        "• {$imagesCount} Gambar Produk\n".
+                        "• {$reviewsCount} Review/Rating\n".
+                        "• {$wishlistCount} Item Wishlist\n".
+                        "• {$cartCount} Item Keranjang\n".
+                        "• {$orderItemsCount} Item di Order\n".
+                        "• Semua relasi kategori\n\n".
+                        "⚠️ **PERINGATAN:** Tindakan ini **TIDAK DAPAT DIBATALKAN**. Semua data akan hilang selamanya!\n\n".
+                        'File gambar fisik juga akan **DIHAPUS** dari storage.';
+                })
+                ->modalIcon('heroicon-o-exclamation-triangle')
+                ->modalIconColor('danger')
+                ->modalSubmitActionLabel('Ya, Hapus Permanen Selamanya')
+                ->successNotificationTitle('Produk Dihapus Permanen'),
+            RestoreAction::make()
+                ->modalHeading('Pulihkan Produk dari Trash')
+                ->modalDescription(function () {
+                    $variantsCount = $this->record->variants()->withTrashed()->count();
+
+                    return "Anda akan memulihkan produk **{$this->record->sku}** - {$this->record->name} dan **{$variantsCount} varian** dari trash.\n\n".
+                        "✅ Produk akan kembali aktif\n".
+                        "✅ Semua varian akan dipulihkan\n".
+                        "✅ Relasi data akan kembali normal\n\n".
+                        '💡 Produk akan muncul kembali di daftar produk aktif.';
+                })
+                ->successNotificationTitle('Produk Berhasil Dipulihkan'),
         ];
     }
 
     protected function beforeSave(): void
     {
+        // Validate and handle variants with updateOrCreate based on SKU
+        $this->handleVariantsBeforeSave();
+
         // Sync dengan Inventory Product jika ada perubahan
         $this->syncWithInventory();
+    }
+
+    protected function handleVariantsBeforeSave(): void
+    {
+        $data = $this->form->getState();
+
+        // Check for duplicate variant SKUs in current form data
+        if (isset($data['variants']) && is_array($data['variants'])) {
+            $variantSkus = array_filter(array_column($data['variants'], 'sku'));
+
+            // Check for duplicates within the form
+            $duplicateVariantSkus = array_diff_assoc($variantSkus, array_unique($variantSkus));
+
+            if (! empty($duplicateVariantSkus)) {
+                Notification::make()
+                    ->danger()
+                    ->title('SKU Varian Duplikat')
+                    ->body('Beberapa SKU varian terduplikasi dalam form: '.implode(', ', array_unique($duplicateVariantSkus)))
+                    ->send();
+
+                $this->halt();
+            }
+
+            // Check if variant SKUs exist in OTHER products
+            $existingVariantsInOtherProducts = \App\Models\ProductVariant::withTrashed()
+                ->whereIn('sku', $variantSkus)
+                ->where('product_id', '!=', $this->record->id)
+                ->pluck('sku')
+                ->toArray();
+
+            if (! empty($existingVariantsInOtherProducts)) {
+                Notification::make()
+                    ->danger()
+                    ->title('SKU Varian Sudah Digunakan Produk Lain')
+                    ->body('SKU varian ini sudah digunakan produk lain: '.implode(', ', $existingVariantsInOtherProducts))
+                    ->send();
+
+                $this->halt();
+            }
+        }
     }
 
     protected function afterSave(): void

@@ -31,12 +31,70 @@ class Product extends Model
         'stock' => 'integer',
     ];
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Soft delete: cascade soft delete variants
+        static::deleting(function ($product) {
+            if (! $product->isForceDeleting()) {
+                // Soft delete variants (variants will handle their own relations via their boot method)
+                $product->variants()->delete();
+            } else {
+                // Force delete: delete all morphMany relations first
+                $product->reviews()->forceDelete();
+                $product->wishlistItems()->forceDelete();
+                $product->cartItems()->forceDelete();
+                $product->orderItems()->forceDelete();
+
+                // Force delete variants (ProductVariant boot method will handle cascade for variant relations)
+                $product->variants()->forceDelete();
+
+                // Force delete images and their files
+                $images = $product->images()->get();
+                foreach ($images as $image) {
+                    static::deleteImageFiles($image);
+                }
+                $product->images()->forceDelete();
+
+                // Detach categories (many-to-many)
+                $product->categories()->detach();
+            }
+        });
+
+        // Restoring: restore soft deleted variants
+        static::restoring(function ($product) {
+            $product->variants()->restore();
+        });
+    }
+
+    /**
+     * Delete image files from storage
+     */
+    protected static function deleteImageFiles(ProductImage $image): void
+    {
+        $paths = [
+            $image->path,
+            $image->path_ratio_27_28,
+            $image->path_ratio_108_53,
+            $image->path_ratio_51_52,
+            $image->path_ratio_99_119,
+        ];
+
+        foreach ($paths as $path) {
+            if ($path && \Storage::disk('public')->exists($path)) {
+                \Storage::disk('public')->delete($path);
+            }
+        }
+    }
+
     /* ---------------- Relations ---------------- */
 
     public function product_inventory(): BelongsTo
     {
         return $this->belongsTo(\App\Models\Inventory\Product::class, 'sku', 'sku');
     }
+
     public function brand(): BelongsTo
     {
         return $this->belongsTo(Brand::class);
