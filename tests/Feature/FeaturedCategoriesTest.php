@@ -70,8 +70,8 @@ it('only displays categories where highlight is true', function () {
         });
 });
 
-it('filters inactive categories even if highlighted', function () {
-    // Create highlighted but inactive category (should NOT appear)
+it('displays all categories where highlight is true regardless of active status', function () {
+    // Create highlighted but inactive category (should NOW appear)
     $inactiveCategory = ProductCategory::create([
         'name' => 'Inactive Highlighted',
         'slug' => 'inactive-highlighted',
@@ -96,16 +96,16 @@ it('filters inactive categories even if highlighted', function () {
         ->assertViewHas('categories', function ($categories) use ($activeCategory, $inactiveCategory) {
             $categoryIds = collect($categories)->pluck('id')->toArray();
 
-            // Should only contain active category
-            expect($categories)->toHaveCount(1);
+            // Should contain BOTH categories (only filter highlight = true)
+            expect($categories)->toHaveCount(2);
             expect($categoryIds)->toContain($activeCategory->id);
-            expect($categoryIds)->not->toContain($inactiveCategory->id);
+            expect($categoryIds)->toContain($inactiveCategory->id);
 
             return true;
         });
 });
 
-it('respects hideEmpty parameter to filter categories without products', function () {
+it('displays categories with and without products when highlight is true', function () {
     // Category with products
     $categoryWithProducts = ProductCategory::create([
         'name' => 'Category With Products',
@@ -114,7 +114,7 @@ it('respects hideEmpty parameter to filter categories without products', functio
         'highlight' => true,
     ]);
 
-    // Category without products
+    // Category without products (should NOW also appear)
     $categoryWithoutProducts = ProductCategory::create([
         'name' => 'Category Without Products',
         'slug' => 'category-without-products',
@@ -125,22 +125,10 @@ it('respects hideEmpty parameter to filter categories without products', functio
     $product = Product::factory()->create(['status' => 'active']);
     $categoryWithProducts->products()->attach($product->id);
 
-    // Test with hideEmpty = true (default)
-    Livewire::test(FeaturedCategories::class, ['hideEmpty' => true])
-        ->assertStatus(200)
-        ->assertViewHas('categories', function ($categories) use ($categoryWithProducts) {
-            // Should only show category with products
-            expect($categories)->toHaveCount(1);
-            expect($categories[0]['id'])->toBe($categoryWithProducts->id);
-
-            return true;
-        });
-
-    // Test with hideEmpty = false
-    Livewire::test(FeaturedCategories::class, ['hideEmpty' => false])
+    Livewire::test(FeaturedCategories::class)
         ->assertStatus(200)
         ->assertViewHas('categories', function ($categories) {
-            // Should show both categories
+            // Should show BOTH categories (no hideEmpty filter)
             expect($categories)->toHaveCount(2);
 
             return true;
