@@ -5,8 +5,6 @@ namespace App\Filament\Resources\ProductCategories;
 use App\Filament\Resources\ProductCategories\Pages\ManageProductCategories;
 use App\Models\ProductCategory;
 use BackedEnum;
-use Filament\Tables\Columns\ToggleColumn;
-use UnitEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -30,14 +28,17 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use UnitEnum;
 
 class ProductCategoryResource extends Resource
 {
     protected static ?string $model = ProductCategory::class;
+
     protected static ?string $navigationLabel = 'Kategori Produk';
 
     protected static ?string $pluralLabel = 'Kategori Produk';
@@ -47,6 +48,7 @@ class ProductCategoryResource extends Resource
     protected static ?int $navigationSort = 1;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShoppingBag;
+
     public static function form(Schema $schema): Schema
     {
         return $schema
@@ -123,7 +125,11 @@ class ProductCategoryResource extends Resource
                     ->searchable(),
                 TextColumn::make('slug')
                     ->searchable(),
-                ImageColumn::make('image_path'),
+                ImageColumn::make('image_path')
+                    ->disk('public')
+                    ->label('Gambar')
+                    ->square()
+                    ->defaultImageUrl(asset('images/placeholder.jpg')),
                 IconColumn::make('is_active')
                     ->boolean(),
                 TextColumn::make('sort_order')
