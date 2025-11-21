@@ -55,13 +55,20 @@ class ProductCategoryResource extends Resource
                 TextInput::make('name')
                     ->required(),
                 TextInput::make('slug')
+                    ->unique(ignoreRecord: true)
                     ->required(),
                 Textarea::make('description')
                     ->columnSpanFull(),
                 FileUpload::make('image_path')
                     ->image(),
                 Toggle::make('is_active')
+                    ->default(true)
                     ->required(),
+                Toggle::make('highlight')
+                    ->required()
+                    ->default(false)
+                    ->label('Highlight Kategori')
+                    ->helperText('Tandai kategori ini untuk ditampilkan di bagian highlight halaman home.'),
                 TextInput::make('sort_order')
                     ->required()
                     ->numeric()

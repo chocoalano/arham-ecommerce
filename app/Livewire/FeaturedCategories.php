@@ -75,6 +75,7 @@ class FeaturedCategories extends Component
         // -- Query utama: Eloquent ProductCategory + join fallback image
         $q = ProductCategory::query()
             ->where('product_categories.is_active', true)
+            ->where('product_categories.highlight', true)
             ->when($onlyRoot, fn ($qq) => $qq->whereNull('product_categories.parent_id'))
             ->leftJoinSub($fallbackImagePerCategory, 'fc', function ($join) {
                 $join->on('fc.product_category_id', '=', 'product_categories.id');
