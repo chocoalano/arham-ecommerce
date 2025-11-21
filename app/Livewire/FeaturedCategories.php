@@ -95,16 +95,19 @@ class FeaturedCategories extends Component
                 'products as products_active_count' => function ($qq) {
                     $qq->where('status', 'active');
                 },
-            ]);
-
-        if ($hideEmpty) {
-            $q->having('products_active_count', '>', 0);
-        }
-
-        $q->orderByDesc('products_active_count')
+            ])
+            ->orderByDesc('products_active_count')
             ->orderBy('product_categories.name');
 
-        $rows = $q->limit($limit)->get();
+        $rows = $q->get();
+
+        // Filter empty categories in PHP for SQLite compatibility
+        if ($hideEmpty) {
+            $rows = $rows->filter(fn ($row) => $row->products_active_count > 0);
+        }
+
+        // Apply limit after filtering
+        $rows = $rows->take($limit);
 
         return $rows->map(function ($row) {
             return [
