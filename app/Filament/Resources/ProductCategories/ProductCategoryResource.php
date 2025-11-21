@@ -5,6 +5,7 @@ namespace App\Filament\Resources\ProductCategories;
 use App\Filament\Resources\ProductCategories\Pages\ManageProductCategories;
 use App\Models\ProductCategory;
 use BackedEnum;
+use Filament\Tables\Columns\ToggleColumn;
 use UnitEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -93,11 +94,9 @@ class ProductCategoryResource extends Resource
                     ->columnSpanFull(),
                 ImageEntry::make('image_path')
                     ->disk('public')
-                    ->directory('category_images')
                     ->label('Gambar'),
-                TextEntry::make('highlight')
-                    ->boolean()
-                    ->placeholder('-'),
+                ToggleColumn::make('highlight')
+                    ->label('Highlight Kategori'),
                 IconEntry::make('is_active')
                     ->boolean(),
                 TextEntry::make('sort_order')
