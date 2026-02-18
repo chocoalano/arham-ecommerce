@@ -359,10 +359,12 @@ class Shop extends Component
 
         // Size static – pastikan ProductVariant.options->size pakai value ini
         $sizes = [
-            ['value' => 'S',  'label' => 'S',  'count' => null],
-            ['value' => 'M',  'label' => 'M',  'count' => null],
-            ['value' => 'L',  'label' => 'L',  'count' => null],
-            ['value' => 'XL', 'label' => 'XL', 'count' => null],
+            ['value' => 'S',    'label' => 'S',    'count' => null],
+            ['value' => 'M',    'label' => 'M',    'count' => null],
+            ['value' => 'L',    'label' => 'L',    'count' => null],
+            ['value' => 'XL',   'label' => 'XL',   'count' => null],
+            ['value' => 'XXL',  'label' => 'XXL',  'count' => null],
+            ['value' => 'XXXL', 'label' => 'XXXL', 'count' => null],
         ];
 
         $sortOptions = [

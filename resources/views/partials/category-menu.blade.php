@@ -19,19 +19,22 @@
 
                         <!-- Mega Category Menu Start -->
                         <ul class="category-mega-menu">
-                            @foreach($category->children->chunk(ceil($category->children->count() / 3)) as $chunk)
+                            @foreach($category->children as $child)
                                 <li class="menu-item-has-children">
-                                    @foreach($chunk as $child)
-                                        @if($loop->first)
-                                            <a class="megamenu-head" href="{{ route('catalog.index', ['cat[0]' => $child->slug]) }}">
-                                                {{ $child->name }}
-                                            </a>
-                                            <ul>
-                                        @else
-                                            <li><a href="{{ route('catalog.index', ['cat[0]' => $child->slug]) }}">{{ $child->name }}</a></li>
-                                        @endif
-                                    @endforeach
-                                    </ul>
+                                    <a class="megamenu-head" href="{{ route('catalog.index', ['cat[0]' => $child->slug]) }}">
+                                        {{ $child->name }}
+                                    </a>
+                                    @if($child->children->isNotEmpty())
+                                        <ul>
+                                            @foreach($child->children as $grandchild)
+                                                <li>
+                                                    <a href="{{ route('catalog.index', ['cat[0]' => $grandchild->slug]) }}">
+                                                        {{ $grandchild->name }}
+                                                    </a>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
                                 </li>
                             @endforeach
                         </ul>

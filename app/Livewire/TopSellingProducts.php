@@ -124,9 +124,9 @@ class TopSellingProducts extends Component
             ->selectRaw('COUNT(*)')
             ->whereColumn('reviewable_id', 'products.id');
 
-        // --- G. Query utama: Products yang punya sales
+        // --- G. Query utama: Semua produk aktif, diurutkan berdasarkan penjualan
         $q = Product::query()
-            ->joinSub($totalSales, 'ts', fn ($join) => $join->on('ts.product_id', '=', 'products.id'))
+            ->leftJoinSub($totalSales, 'ts', fn ($join) => $join->on('ts.product_id', '=', 'products.id'))
             ->leftJoin('product_images as thumb', function ($join) {
                 $join->on('thumb.product_id', '=', 'products.id')
                     ->where('thumb.is_thumbnail', '=', 1);
@@ -137,7 +137,6 @@ class TopSellingProducts extends Component
                     ->on('img.sort_order', '=', 'ms.min_sort');
             })
             ->where('products.status', 'active')
-            ->where('products.highlights', true)
             ->whereNull('products.deleted_at')
             ->select([
                 'products.id',
@@ -147,13 +146,14 @@ class TopSellingProducts extends Component
                 'products.price',
                 'products.sale_price',
                 'products.created_at',
-                DB::raw('COALESCE(thumb.path, img.path) as image_path'),
-                DB::raw('COALESCE(thumb.path_ratio_99_119, img.path_ratio_99_119) as image_99_119'),
-                DB::raw('ts.total_qty as total_sold'),
+                DB::raw('MAX(COALESCE(thumb.path, img.path)) as image_path'),
+                DB::raw('MAX(COALESCE(thumb.path_ratio_99_119, img.path_ratio_99_119)) as image_99_119'),
+                DB::raw('COALESCE(MAX(ts.total_qty), 0) as total_sold'),
             ])
             ->selectSub($minVariantPriceSub, 'from_variant_price')
             ->selectSub($avgRatingSub, 'avg_rating')
             ->selectSub($countRatingSub, 'reviews_count')
+            ->groupBy('products.id', 'products.slug', 'products.name', 'products.short_description', 'products.price', 'products.sale_price', 'products.created_at')
             ->orderByDesc('total_sold')
             ->orderByDesc('products.created_at');
 
@@ -184,8 +184,6 @@ class TopSellingProducts extends Component
                         ->on('img.sort_order', '=', 'ms.min_sort');
                 })
                 ->where('products.status', 'active')
-                ->where('products.highlights', true)
-                ->where('products.is_featured', true)
                 ->whereNull('products.deleted_at')
                 ->select([
                     'products.id',
@@ -195,13 +193,14 @@ class TopSellingProducts extends Component
                     'products.price',
                     'products.sale_price',
                     'products.created_at',
-                    DB::raw('COALESCE(thumb.path, img.path) as image_path'),
-                    DB::raw('COALESCE(thumb.path_ratio_99_119, img.path_ratio_99_119) as image_99_119'),
+                    DB::raw('MAX(COALESCE(thumb.path, img.path)) as image_path'),
+                    DB::raw('MAX(COALESCE(thumb.path_ratio_99_119, img.path_ratio_99_119)) as image_99_119'),
                     DB::raw('0 as total_sold'),
                 ])
                 ->selectSub($minVariantPriceSub, 'from_variant_price')
                 ->selectSub($avgRatingSub, 'avg_rating')
                 ->selectSub($countRatingSub, 'reviews_count')
+                ->groupBy('products.id', 'products.slug', 'products.name', 'products.short_description', 'products.price', 'products.sale_price', 'products.created_at')
                 ->orderByDesc('products.created_at')
                 ->limit($limit)
                 ->get();

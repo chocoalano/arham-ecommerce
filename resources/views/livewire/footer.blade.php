@@ -22,7 +22,7 @@
                 <!-- Products Links -->
                 <div class="col-12 col-lg-2 col-md-6 col-sm-6 mb-20 mb-lg-0 mb-xl-0 mb-md-35 mb-sm-35">
                     <div class="single-footer">
-                        <h3 class="footer-title mb-20">Produk</h3>
+                        <h3 class="footer-title mb-20">{{ $productColumnTitle }}</h3>
                         <ul>
                             @foreach($productsLinks as $link)
                                 <li><a href="{{ $link['url'] }}">{{ $link['label'] }}</a></li>
@@ -34,7 +34,7 @@
                 <!-- Company Links (from Pages model) -->
                 <div class="col-12 col-lg-2 col-md-6 col-sm-6 mb-20 mb-lg-0 mb-xl-0 mb-md-35 mb-sm-35">
                     <div class="single-footer">
-                        <h3 class="footer-title mb-20">Perusahaan Kami</h3>
+                        <h3 class="footer-title mb-20">{{ $companyColumnTitle }}</h3>
                         <ul>
                             @forelse($companyLinks as $link)
                                 <li><a href="{{ $link['url'] }}">{{ $link['label'] }}</a></li>
@@ -49,10 +49,11 @@
                 <!-- Newsletter & Address -->
                 <div class="col-12 col-lg-4 col-md-6 col-sm-6">
                     <div class="single-footer mb-35">
-                        <h3 class="footer-title mb-20">Berlangganan</h3>
+                        <h3 class="footer-title mb-20">{{ $newsletterTitle }}</h3>
                         <div class="newsletter-form mb-20">
                             <form wire:submit.prevent="subscribe" class="subscribe-form">
-                                <input type="email" wire:model="email" placeholder="Alamat email kamu" required>
+                                <input type="email" wire:model="email" placeholder="{{ $newsletterPlaceholder }}"
+                                    required>
                                 <button type="submit" value="submit">
                                     <i class="lnr lnr-envelope"></i>
                                 </button>
@@ -81,14 +82,14 @@
                         @enderror
                     </div>
                     <div class="single-footer">
-                        <h3 class="footer-title mb-20">Alamat</h3>
+                        <h3 class="footer-title mb-20">{{ $addressTitle }}</h3>
                         @php
                             $alamat = \App\Models\Page::where([
                                 'slug' => 'contact',
                                 'is_active' => true
                             ])->first();
                         @endphp
-                        <p>{{ $alamat->sections['contact_info']['address'] ?? 'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Animi corporis, necessitatibus officiis dolor facere ipsum rem sed itaque ea eos.' }}
+                        <p>{{ $alamat->sections['contact_info']['address'] ?? 'Data alamat belum dibuat di halaman contact' }}
                         </p>
                     </div>
                 </div>
@@ -102,7 +103,7 @@
         <div class="container">
             <div class="row align-items-center text-center">
                 <div class="social-link">
-                    <span class="title">Ikuti Kami:</span>
+                    <span class="title">{{ $socialSectionTitle }}</span>
                     <ul>
                         @foreach($socialLinks as $social)
                             <li>
@@ -161,7 +162,7 @@
                 <div class="col-lg-12">
                     <p class="copyright-text">
                         Copyright &copy; {{ date('Y') }}
-                        <a href="{{ route('home') }}">Arham E-Commerce</a>.
+                        <a href="{{ route('home') }}">{{ $copyrightText }}</a>.
                         All Rights Reserved
                     </p>
                 </div>

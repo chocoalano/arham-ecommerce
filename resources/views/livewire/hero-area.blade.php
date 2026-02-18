@@ -11,22 +11,6 @@
                                 style="background-image: url('{{ asset($slide['image_108_53']) ?? asset($slide['image']) }}'); background-size: cover; background-position: center;">
                                 <div
                                     class="slider-content d-flex flex-column justify-content-center align-items-start h-100">
-                                    @if(!empty($slide['desc']))
-                                        <p class="mb-2">
-                                            {{ \Illuminate\Support\Str::limit(strip_tags($slide['desc']), 120) }}
-                                        </p>
-                                    @endif
-
-                                    <h1 class="mb-3">
-                                        {{ $slide['name'] }}
-                                        @if(!empty($slide['discount_percent']))
-                                            <span class="badge bg-danger ms-2">-{{ $slide['discount_percent'] }}%</span>
-                                        @endif
-                                    </h1>
-
-                                    <a href="{{ $slide['link_url'] }}" class="pataku-btn slider-btn-1">
-                                        {{ $slide['button_text'] }}
-                                    </a>
                                 </div>
                             </div>
                         @empty

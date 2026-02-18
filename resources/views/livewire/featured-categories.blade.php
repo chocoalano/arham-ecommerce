@@ -1,85 +1,128 @@
-{{-- Featured Categories (dinamis, anti N+1, dengan fallback image) --}}
-<div class="featured-categories mb-80">
+@php
+    $cats = collect($categories ?? [])->take(4)->values();
+
+    $c0 = $cats->get(0);
+    $c1 = $cats->get(1);
+    $c2 = $cats->get(2);
+    $c3 = $cats->get(3);
+
+    $fallback = asset('assets/img/placeholder/category.jpg'); // sesuaikan
+    $img = function ($c, $key) use ($fallback) {
+        if (!$c)
+            return $fallback;
+        $path = $c[$key] ?? null;
+        return !empty($path) ? asset($path) : $fallback;
+    };
+@endphp
+
+<div class="featured-categories fc m-b-80">
     <div class="container">
         <div class="row">
-            <div class="col-lg-12 text-center mb-40">
+            <div class="col-xs-12 text-center m-b-40">
                 <div class="section-title">
                     <h2><span>Kategori</span> Pilihan</h2>
                     <p>Tampilkan semua kategori pilihan beserta produk di halaman utama.</p>
                 </div>
             </div>
         </div>
-        @if(count($categories) > 0)
-            <div class="row">
-                {{-- Large banner on left (First category) - Ratio 27:28 (540×560) --}}
-                @if(isset($categories[0]))
-                    <div class="col-lg-6 col-md-6 mb-sm-30" wire:key="cat-{{ $categories[0]['id'] }}">
-                        <div class="banner">
-                            <a href="{{ $categories[0]['url'] }}">
-                                <img width="540" height="560" src="{{ asset($categories[0]['image_27_28']) }}" class="img-fluid"
-                                    alt="{{ $categories[0]['name'] }}" loading="lazy">
-                            </a>
-                            <span class="banner-category-title">
-                                <a href="{{ $categories[0]['url'] }}">{{ $categories[0]['name'] }}</a>
-                            </span>
-                        </div>
-                    </div>
-                @endif
 
-                {{-- Right side with 3 banners --}}
-                <div class="col-lg-6 col-md-6">
-                    <div class="row">
-                        {{-- Wide banner (Second category) - Ratio 108:53 (540×265) --}}
-                        @if(isset($categories[1]))
-                            <div class="col-lg-12 col-md-12 mb-30" wire:key="cat-{{ $categories[1]['id'] }}">
-                                <div class="banner">
-                                    <a href="{{ $categories[1]['url'] }}">
-                                        <img width="550" height="270" src="{{ asset($categories[1]['image_108_53']) }}"
-                                            class="img-fluid" alt="{{ $categories[1]['name'] }}" loading="lazy">
+        @if($cats->count() > 0)
+            <div class="row fc-grid">
+                {{-- LEFT BIG --}}
+                <div class="col-md-6 fc-col fc-left">
+                    @if($c0)
+                        <div class="fc-banner fc-banner--lg" wire:key="cat-{{ $c0['id'] }}">
+                            <a href="{{ $c0['url'] }}" class="fc-link">
+                                <div class="fc-media">
+                                    <img src="{{ $img($c0, 'image_27_28') }}" alt="{{ $c0['name'] }}"
+                                        class="img-responsive fc-img" loading="lazy"
+                                        onerror="this.onerror=null;this.src='{{ $fallback }}';">
+                                </div>
+
+                                <div class="fc-overlay"></div>
+
+                                <div class="fc-title">
+                                    <div class="fc-kicker">Featured</div>
+                                    <div class="fc-name">{{ $c0['name'] }}</div>
+                                </div>
+                            </a>
+                        </div>
+                    @endif
+                </div>
+
+                {{-- RIGHT STACK --}}
+                <div class="col-md-6 fc-col fc-right">
+                    {{-- TOP WIDE --}}
+                    @if($c1)
+                        <div class="fc-banner fc-banner--wide" wire:key="cat-{{ $c1['id'] }}">
+                            <a href="{{ $c1['url'] }}" class="fc-link">
+                                <div class="fc-media">
+                                    <img src="{{ $img($c1, 'image_108_53') }}" alt="{{ $c1['name'] }}"
+                                        class="img-responsive fc-img" loading="lazy"
+                                        onerror="this.onerror=null;this.src='{{ $fallback }}';">
+                                </div>
+
+                                <div class="fc-overlay"></div>
+
+                                <div class="fc-title">
+                                    <div class="fc-kicker">Top pick</div>
+                                    <div class="fc-name">{{ $c1['name'] }}</div>
+                                </div>
+                            </a>
+                        </div>
+                    @endif
+
+                    {{-- BOTTOM TWO (HARUS PRESISI SEJAJAR) --}}
+                    <div class="fc-bottom">
+                        @if($c2)
+                            <div class="fc-cell" wire:key="cat-{{ $c2['id'] }}">
+                                <div class="fc-banner fc-banner--bottom">
+                                    <a href="{{ $c2['url'] }}" class="fc-link">
+                                        <div class="fc-media">
+                                            <img src="{{ $img($c2, 'image_51_52') }}" alt="{{ $c2['name'] }}"
+                                                class="img-responsive fc-img" loading="lazy"
+                                                onerror="this.onerror=null;this.src='{{ $fallback }}';">
+                                        </div>
+
+                                        <div class="fc-overlay"></div>
+
+                                        <div class="fc-title">
+                                            <div class="fc-kicker">Hot</div>
+                                            <div class="fc-name">{{ $c2['name'] }}</div>
+                                        </div>
                                     </a>
-                                    <span class="banner-category-title">
-                                        <a href="{{ $categories[1]['url'] }}">{{ $categories[1]['name'] }}</a>
-                                    </span>
                                 </div>
                             </div>
                         @endif
-                    </div>
-                    <div class="row">
-                        {{-- Small square banner left (Third category) - Ratio 51:52 (255×260) --}}
-                        @if(isset($categories[2]))
-                            <div class="col-lg-6 col-md-6 col-sm-6 col-6" wire:key="cat-{{ $categories[2]['id'] }}">
-                                <div class="banner">
-                                    <a href="{{ $categories[2]['url'] }}">
-                                        <img width="265" height="270" src="{{ asset($categories[2]['image_51_52']) }}"
-                                            class="img-fluid" alt="{{ $categories[2]['name'] }}" loading="lazy">
+
+                        @if($c3)
+                            <div class="fc-cell" wire:key="cat-{{ $c3['id'] }}">
+                                <div class="fc-banner fc-banner--bottom">
+                                    <a href="{{ $c3['url'] }}" class="fc-link">
+                                        <div class="fc-media">
+                                            <img src="{{ $img($c3, 'image_99_119') }}" alt="{{ $c3['name'] }}"
+                                                class="img-responsive fc-img" loading="lazy"
+                                                onerror="this.onerror=null;this.src='{{ $fallback }}';">
+                                        </div>
+
+                                        <div class="fc-overlay"></div>
+
+                                        <div class="fc-title">
+                                            <div class="fc-kicker">Trending</div>
+                                            <div class="fc-name">{{ $c3['name'] }}</div>
+                                        </div>
                                     </a>
-                                    <span class="banner-category-title">
-                                        <a href="{{ $categories[2]['url'] }}">{{ $categories[2]['name'] }}</a>
-                                    </span>
-                                </div>
-                            </div>
-                        @endif
-                        {{-- Small portrait banner right (Fourth category) - Ratio 99:119 (198×238) --}}
-                        @if(isset($categories[3]))
-                            <div class="col-lg-6 col-md-6 col-sm-6 col-6" wire:key="cat-{{ $categories[3]['id'] }}">
-                                <div class="banner">
-                                    <a href="{{ $categories[3]['url'] }}">
-                                        <img width="265" height="270" src="{{ asset($categories[3]['image_99_119']) }}"
-                                            class="img-fluid" alt="{{ $categories[3]['name'] }}" loading="lazy">
-                                    </a>
-                                    <span class="banner-category-title">
-                                        <a href="{{ $categories[3]['url'] }}">{{ $categories[3]['name'] }}</a>
-                                    </span>
                                 </div>
                             </div>
                         @endif
                     </div>
                 </div>
+
             </div>
         @else
             <div class="row">
-                <div class="col-12">
-                    <div class="alert alert-info mb-0 text-center">
+                <div class="col-xs-12">
+                    <div class="alert alert-info text-center m-b-0">
                         Belum ada kategori aktif yang memiliki produk.
                     </div>
                 </div>

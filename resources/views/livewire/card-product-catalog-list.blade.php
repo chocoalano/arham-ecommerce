@@ -64,7 +64,7 @@
         {{-- Action buttons --}}
         <div class="hover-icons">
             {{-- Quick view --}}
-            <a class="hover-icon" href="{{ $p['url'] ?? '#' }}" title="Lihat cepat" onclick="return PTK.quickView({{ (int) $productId }});">
+            <a class="hover-icon" href="{{ $p['url'] ?? '#' }}" title="Lihat detail" onclick="return PTK.detail(@json($p['url'] ?? null));">
                 <i class="lnr lnr-eye"></i>
             </a>
 

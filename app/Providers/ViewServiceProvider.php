@@ -29,7 +29,12 @@ class ViewServiceProvider extends ServiceProvider
                 ->with(['children' => function ($query) {
                     $query->where('is_active', true)
                         ->orderBy('sort_order')
-                        ->orderBy('name');
+                        ->orderBy('name')
+                        ->with(['children' => function ($q) {
+                            $q->where('is_active', true)
+                                ->orderBy('sort_order')
+                                ->orderBy('name');
+                        }]);
                 }])
                 ->orderBy('sort_order')
                 ->orderBy('name')

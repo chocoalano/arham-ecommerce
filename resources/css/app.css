@@ -9,3 +9,247 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+/* style bootstrap 3 */
+/* spacing helper */
+.m-b-0 {
+    margin-bottom: 0 !important;
+}
+
+.m-b-40 {
+    margin-bottom: 40px;
+}
+
+.m-b-80 {
+    margin-bottom: 80px;
+}
+
+/* ===== Featured Categories (FC) ===== */
+.fc {
+    /* angka ini bisa kamu tweak sedikit kalau theme punya spacing beda */
+    --fc-h: 560px;
+    /* total tinggi block kanan/kiri di desktop */
+    --fc-gap: 24px;
+    /* jarak antar banner kanan (wide vs bottom) */
+    --fc-top: 270px;
+    /* tinggi banner wide kanan (desktop) */
+    --fc-radius: 16px;
+}
+
+/* Desktop precision: outer row jadi flex -> kiri kanan selalu sama tinggi */
+@media (min-width: 992px) {
+    .fc .fc-grid {
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        -ms-flex-wrap: wrap;
+        flex-wrap: wrap;
+        -webkit-box-align: stretch;
+        -ms-flex-align: stretch;
+        align-items: stretch;
+    }
+
+    .fc .fc-col {
+        float: none !important;
+        /* override bootstrap float */
+    }
+
+    .fc .fc-left,
+    .fc .fc-right {
+        height: var(--fc-h);
+    }
+
+    /* Right stack layout */
+    .fc .fc-right {
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-box-orient: vertical;
+        -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+        flex-direction: column;
+    }
+
+    .fc .fc-banner--wide {
+        margin-bottom: var(--fc-gap);
+    }
+
+    .fc .fc-banner--wide .fc-media {
+        height: var(--fc-top);
+    }
+
+    .fc .fc-bottom {
+        /* sisa tinggi otomatis */
+        -webkit-box-flex: 1;
+        -ms-flex: 1 1 auto;
+        flex: 1 1 auto;
+
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+    }
+
+    .fc .fc-cell {
+        width: 50%;
+    }
+
+    .fc .fc-cell:first-child {
+        padding-right: 12px;
+    }
+
+    .fc .fc-cell:last-child {
+        padding-left: 12px;
+    }
+
+    .fc .fc-banner--bottom,
+    .fc .fc-banner--bottom .fc-media {
+        height: 100%;
+    }
+
+    .fc .fc-banner--lg .fc-media {
+        height: 100%;
+    }
+}
+
+/* Mobile: pakai ratio wrapper (padding-top) */
+.fc .fc-media {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: var(--fc-radius);
+}
+
+.fc .fc-media:before {
+    content: "";
+    display: block;
+}
+
+/* ratio (mobile/tablet) */
+.fc .fc-banner--lg .fc-media:before {
+    padding-top: 103.7%;
+}
+
+/* 28/27 */
+.fc .fc-banner--wide .fc-media:before {
+    padding-top: 49.1%;
+}
+
+/* 53/108 */
+.fc .fc-banner--bottom .fc-media:before {
+    padding-top: 100%;
+}
+
+/* square bottom */
+
+/* image cover */
+.fc .fc-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: var(--fc-radius);
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+}
+
+/* banner container */
+.fc .fc-banner {
+    position: relative;
+    border-radius: var(--fc-radius);
+    overflow: hidden;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.12);
+    background: #f6f6f6;
+}
+
+/* link full */
+.fc .fc-link {
+    display: block;
+    position: relative;
+    color: inherit;
+    text-decoration: none;
+}
+
+/* gradient overlay (lebih menarik + title kebaca) */
+.fc .fc-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.00) 0%, rgba(0, 0, 0, 0.55) 100%),
+        radial-gradient(80% 60% at 50% 20%, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.00) 60%);
+    pointer-events: none;
+}
+
+/* title */
+.fc .fc-title {
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    bottom: 16px;
+    z-index: 2;
+}
+
+.fc .fc-kicker {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    backdrop-filter: blur(6px);
+}
+
+.fc .fc-name {
+    margin-top: 10px;
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.15;
+    text-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* hover effect */
+@media (min-width: 992px) {
+    .fc .fc-banner:hover .fc-img {
+        -webkit-transform: scale(1.04);
+        transform: scale(1.04);
+        transition: transform .35s ease;
+    }
+
+    .fc .fc-banner .fc-img {
+        transition: transform .35s ease;
+    }
+
+    .fc .fc-banner:hover {
+        box-shadow: 0 18px 46px rgba(0, 0, 0, 0.16);
+        transition: box-shadow .35s ease;
+    }
+}
+
+/* stack spacing on mobile */
+@media (max-width: 991px) {
+    .fc .fc-banner--wide {
+        margin-top: 20px;
+    }
+
+    .fc .fc-bottom {
+        margin-top: 20px;
+    }
+
+    .fc .fc-cell {
+        float: left;
+        width: 50%;
+    }
+
+    .fc .fc-cell:first-child {
+        padding-right: 8px;
+    }
+
+    .fc .fc-cell:last-child {
+        padding-left: 8px;
+    }
+}

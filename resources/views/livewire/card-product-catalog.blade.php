@@ -7,7 +7,7 @@
 
         <!--=======  hover icons  =======-->
 
-        <a class="hover-icon" href="#" data-bs-toggle="modal" data-bs-target="#quick-view-modal-container" onclick="return PTK.quickView({{ (int) $productId }});">
+        <a class="hover-icon" href="{{ $p['url'] ?? '#' }}" onclick="return PTK.detail(@json($p['url'] ?? null));">
             <i class="lnr lnr-eye"></i>
         </a>
 
