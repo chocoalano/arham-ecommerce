@@ -25,17 +25,31 @@
                             </h3>
                             <div class="category-container">
                                 <ul>
-                                    @foreach ($filterCategories as $cat)
+                                    @foreach ($filterCategories as $parent)
+                                        {{-- Parent category --}}
                                         <li>
                                             <label class="checkbox-container">
                                                 <input type="checkbox"
                                                        wire:model.live="selectedCategories"
-                                                       value="{{ $cat->slug }}"
-                                                       id="cat-{{ $cat->id }}">
+                                                       value="{{ $parent->slug }}"
+                                                       id="cat-{{ $parent->id }}">
                                                 <span class="checkmark"></span>
-                                                <span>{{ $cat->name }}</span>
+                                                <span><strong>{{ $parent->name }}</strong></span>
                                             </label>
                                         </li>
+                                        {{-- Child categories (indented) --}}
+                                        @foreach ($parent->children as $child)
+                                            <li style="padding-left: 16px;">
+                                                <label class="checkbox-container">
+                                                    <input type="checkbox"
+                                                           wire:model.live="selectedCategories"
+                                                           value="{{ $child->slug }}"
+                                                           id="cat-{{ $child->id }}">
+                                                    <span class="checkmark"></span>
+                                                    <span>{{ $child->name }}</span>
+                                                </label>
+                                            </li>
+                                        @endforeach
                                     @endforeach
                                 </ul>
                             </div>

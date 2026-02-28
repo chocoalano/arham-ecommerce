@@ -197,16 +197,30 @@ class Shop extends Component
 
         /**
          * FILTER: CATEGORY (slug dari checkbox & sidebar)
+         * Resolve slug → IDs, termasuk child categories (1 level).
          */
         if (! empty($this->selectedCategories)) {
             $selected = $this->selectedCategories;
 
-            $query->whereHas('categories', function ($q) use ($selected) {
-                $q->where(function ($sub) use ($selected) {
-                    $sub->whereIn('product_categories.slug', $selected)
-                        ->orWhereIn('product_categories.id', $selected);
+            // Ambil ID kategori yang slugnya cocok
+            $parentIds = ProductCategory::whereIn('slug', $selected)
+                ->pluck('id');
+
+            // Gabungkan dengan ID child-nya (1 level ke bawah)
+            $categoryIds = ProductCategory::query()
+                ->where(function ($q) use ($selected, $parentIds) {
+                    $q->whereIn('slug', $selected)
+                      ->orWhere(function ($sub) use ($parentIds) {
+                          $sub->whereIn('parent_id', $parentIds);
+                      });
+                })
+                ->pluck('id');
+
+            if ($categoryIds->isNotEmpty()) {
+                $query->whereHas('categories', function ($q) use ($categoryIds) {
+                    $q->whereIn('product_categories.id', $categoryIds);
                 });
-            });
+            }
         }
 
         /**
@@ -251,6 +265,7 @@ class Shop extends Component
 
         /**
          * FILTER: SIZE (options->size di ProductVariant)
+         * Pakai JSON_UNQUOTE(JSON_EXTRACT(...)) eksplisit agar reliable di semua MySQL version.
          */
         if (! empty($this->selectedSizes)) {
             $sizes = $this->selectedSizes;
@@ -259,7 +274,10 @@ class Shop extends Component
                 $q->where('is_active', true)
                     ->where(function ($sub) use ($sizes) {
                         foreach ($sizes as $size) {
-                            $sub->orWhere('options->size', $size);
+                            $sub->orWhereRaw(
+                                "JSON_UNQUOTE(JSON_EXTRACT(options, '$.size')) = ?",
+                                [$size]
+                            );
                         }
                     });
             });
@@ -319,9 +337,12 @@ class Shop extends Component
             ->orderBy('sort_order')
             ->get();
 
-        // Kategori untuk filter "Categories"
+        // Kategori untuk filter "Categories" — hierarkis (parent + children)
         $filterCategories = ProductCategory::query()
+            ->whereNull('parent_id')
             ->where('is_active', true)
+            ->with(['children' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')->orderBy('name')])
+            ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
 

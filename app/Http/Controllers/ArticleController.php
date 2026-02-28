@@ -37,20 +37,47 @@ class ArticleController extends Controller
      */
     public function show(string $slug)
     {
-        $article = Article::query()
+        $article = Article::with('categories')
             ->where('slug', $slug)
             ->firstOrFail();
 
-        // Artikel terkait sederhana: 3 artikel terbaru lainnya
+        $categoryIds = $article->categories->pluck('id');
+
+        // 5 artikel terkait berdasarkan kategori yang sama
         $related = Article::query()
             ->where('id', '<>', $article->id)
-            ->orderByDesc('created_at')
-            ->limit(3)
+            ->where('status', 'published')
+            ->when($categoryIds->isNotEmpty(), fn($q) =>
+                $q->whereHas('categories', fn($c) =>
+                    $c->whereIn('article_article_category.article_category_id', $categoryIds)
+                )
+            )
+            ->orderByDesc('published_at')
+            ->limit(5)
+            ->get();
+
+        // 5 top artikel (pinned terlebih dahulu, lalu terbaru)
+        $topArticles = Article::query()
+            ->where('id', '<>', $article->id)
+            ->where('status', 'published')
+            ->orderByDesc('is_pinned')
+            ->orderByDesc('published_at')
+            ->limit(5)
+            ->get();
+
+        // 5 latest artikel
+        $latestArticles = Article::query()
+            ->where('id', '<>', $article->id)
+            ->where('status', 'published')
+            ->orderByDesc('published_at')
+            ->limit(5)
             ->get();
 
         return view('articles_detail', [
-            'article' => $article,
-            'related' => $related,
+            'article'        => $article,
+            'related'        => $related,
+            'topArticles'    => $topArticles,
+            'latestArticles' => $latestArticles,
         ]);
     }
 }
