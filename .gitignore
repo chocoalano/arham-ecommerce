@@ -24,7 +24,5 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
-
-**/caddy
-frankenphp
-frankenphp-worker.php
+rr
+.rr.yaml
