@@ -1,4 +1,4 @@
-{{-- resources/views/livewire/top-selling-products.blade.php --}}
+{{-- resources/views/livewire/new-selling-products.blade.php --}}
 @php
     $items = collect($items ?? [])->take(6)->values();
     $count = $items->count();
@@ -12,13 +12,13 @@
     }
 @endphp
 
-<div class="top-selling-products m-b-80">
+<div class="new-selling-products m-b-80">
     <div class="container">
         <div class="row">
             <div class="col-xs-12 text-center m-b-40">
                 <div class="section-title">
-                    <h2><span>Koleksi</span> Produk Unggulan</h2>
-                    <p>Jelajahi koleksi produk unggulan kami.</p>
+                    <h2><span>Rekomendasi</span> Produk Terbaru</h2>
+                    <p>Pilihan produk terbaru yang direkomendasikan untuk Anda.</p>
                 </div>
             </div>
         </div>
@@ -26,28 +26,28 @@
         <div class="row">
             <div class="col-xs-12">
                 @if($count > 0)
-                    <div class="top-selling-grid ts-cols-{{ $desktopCols }}">
+                    <div class="new-selling-grid ns-cols-{{ $desktopCols }}">
                         @foreach($items as $p)
-                            <div class="ts-grid-item" wire:key="topselling-{{ $p['id'] }}">
-                                <livewire:card-product-catalog :productId="$p['id']" :key="'top-product-' . $p['id']" />
+                            <div class="ns-grid-item" wire:key="new-product-{{ $p['id'] }}">
+                                <livewire:card-product-catalog :productId="$p['id']" :key="'new-product-' . $p['id']" />
                             </div>
                         @endforeach
                     </div>
                 @else
                     <div class="module-admin-alert" role="alert">
                         <strong>Info untuk Admin:</strong>
-                        Belum ada data produk unggulan yang bisa ditampilkan. Pastikan produk aktif tersedia dan tandai produk sebagai unggulan.
+                        Belum ada data rekomendasi produk terbaru. Pastikan produk aktif sudah tersedia agar section ini terisi.
                     </div>
 
-                    <div class="top-selling-grid ts-cols-3 top-selling-placeholder-grid">
+                    <div class="new-selling-grid ns-cols-3 new-selling-placeholder-grid">
                         @for($i = 1; $i <= 6; $i++)
-                            <div class="ts-grid-item" wire:key="topselling-placeholder-{{ $i }}">
+                            <div class="ns-grid-item" wire:key="new-placeholder-{{ $i }}">
                                 <div class="ptk-product ptk-product-placeholder" aria-hidden="true">
                                     <div class="image">
-                                        <img width="300" height="360" src="{{ asset('images/placeholder.jpg') }}" class="img-fluid" alt="Placeholder produk unggulan" loading="lazy">
+                                        <img width="300" height="360" src="{{ asset('images/placeholder.jpg') }}" class="img-fluid" alt="Placeholder produk terbaru" loading="lazy">
                                     </div>
                                     <div class="content">
-                                        <p class="product-title">Produk Unggulan</p>
+                                        <p class="product-title">Produk Terbaru</p>
                                         <p class="product-price"><span class="main-price">-</span></p>
                                     </div>
                                     <div class="rating">
@@ -75,30 +75,30 @@
             margin-bottom: 80px;
         }
 
-        .top-selling-grid {
+        .new-selling-grid {
             display: grid;
             gap: 20px;
             justify-content: center;
             align-items: stretch;
         }
 
-        .top-selling-grid.ts-cols-1 {
+        .new-selling-grid.ns-cols-1 {
             grid-template-columns: minmax(0, 320px);
         }
 
-        .top-selling-grid.ts-cols-2 {
+        .new-selling-grid.ns-cols-2 {
             grid-template-columns: repeat(2, minmax(0, 320px));
         }
 
-        .top-selling-grid.ts-cols-3 {
+        .new-selling-grid.ns-cols-3 {
             grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
-        .ts-grid-item {
+        .ns-grid-item {
             width: 100%;
         }
 
-        .top-selling-placeholder-grid {
+        .new-selling-placeholder-grid {
             margin-top: 16px;
         }
 
@@ -138,13 +138,13 @@
         }
 
         @media (max-width: 991px) {
-            .top-selling-grid {
+            .new-selling-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
             }
         }
 
         @media (max-width: 575px) {
-            .top-selling-grid {
+            .new-selling-grid {
                 grid-template-columns: minmax(0, 1fr) !important;
             }
         }

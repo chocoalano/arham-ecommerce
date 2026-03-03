@@ -135,14 +135,42 @@ class CardProductCatalog extends Component
         if (! $path || trim((string) $path) === '') {
             return asset('images/placeholder.jpg');
         }
+
+        $path = trim((string) $path);
+
         if (preg_match('~^https?://~i', $path)) {
             return $path;
         }
-        try {
-            return Storage::url($path);
-        } catch (Throwable $e) {
-            return asset(ltrim($path, '/'));
+
+        // Normalisasi path ke relasi disk public.
+        $relativePath = ltrim($path, '/');
+        if (str_starts_with($relativePath, 'storage/')) {
+            $relativePath = ltrim(substr($relativePath, 8), '/');
         }
+        if (str_starts_with($relativePath, 'public/')) {
+            $relativePath = ltrim(substr($relativePath, 7), '/');
+        }
+
+        $candidates = [$relativePath];
+
+        // Jika file ratio hilang, coba file original dengan base nama yang sama.
+        if (preg_match('/_ratio_\d+_\d+\.[a-z0-9]+$/i', $relativePath)) {
+            $base = preg_replace('/_ratio_\d+_\d+\.[a-z0-9]+$/i', '', $relativePath);
+            foreach (['jpg', 'jpeg', 'png', 'webp'] as $ext) {
+                $candidates[] = $base.'_original.'.$ext;
+            }
+        }
+
+        foreach (array_values(array_unique($candidates)) as $candidate) {
+            if (! $candidate) {
+                continue;
+            }
+            if (Storage::disk('public')->exists($candidate)) {
+                return Storage::url($candidate);
+            }
+        }
+
+        return asset('images/placeholder.jpg');
     }
 
     public function render()

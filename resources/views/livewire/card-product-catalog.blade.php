@@ -1,8 +1,15 @@
 {{-- Single product card component --}}
 <div class="ptk-product" data-product-id="{{ (int) $productId }}">
+    @php
+        $cardImage = $p['image_99_119'] ?? null;
+        if (! is_string($cardImage) || trim($cardImage) === '') {
+            $cardImage = $p['image'] ?? asset('images/placeholder.jpg');
+        }
+    @endphp
+
     <div class="image">
         <a href="{{ $p['url'] ?? '#' }}" onclick="return PTK.detail(@json($p['url'] ?? null));">
-            <img width="300" height="360" src="{{ $p['image_99_119'] ?? $p['image'] }}" class="img-fluid" alt="{{ $p['name'] }}" loading="lazy">
+            <img width="300" height="360" src="{{ $cardImage }}" class="img-fluid" alt="{{ $p['name'] ?? 'Product image' }}" loading="lazy" onerror="this.onerror=null;this.src='{{ asset('images/placeholder.jpg') }}';">
         </a>
 
         <!--=======  hover icons  =======-->

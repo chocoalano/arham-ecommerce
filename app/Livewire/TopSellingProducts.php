@@ -17,8 +17,8 @@ class TopSellingProducts extends Component
     /** @var array<int, array<string, mixed>> */
     public array $items = [];
 
-    /** Banyak item top-selling yang ditampilkan */
-    public int $limit = 12;
+    /** Banyak item produk unggulan yang ditampilkan */
+    public int $limit = 6;
 
     /** Periode hari untuk hitung penjualan; null = all-time */
     public ?int $days = null;
@@ -29,12 +29,12 @@ class TopSellingProducts extends Component
     public ?string $categorySlug = null;
 
     public function mount(
-        int $limit = 12,
+        int $limit = 6,
         ?int $days = null,
         ?int $categoryId = null,
         ?string $categorySlug = null
     ): void {
-        $this->limit = max(1, min(100, $limit)); // Limit between 1-100
+        $this->limit = max(1, min(6, $limit)); // Hard limit 6 items
         $this->days = $days !== null ? max(1, $days) : null; // Ensure positive days or null
         $this->categoryId = $categoryId;
         $this->categorySlug = $categorySlug;
@@ -124,7 +124,40 @@ class TopSellingProducts extends Component
             ->selectRaw('COUNT(*)')
             ->whereColumn('reviewable_id', 'products.id');
 
-        // --- G. Query utama: Semua produk aktif, diurutkan berdasarkan penjualan
+        $latestFallbackQuery = function (bool $onlyFeatured) use ($minSortPerProduct, $minVariantPriceSub, $avgRatingSub, $countRatingSub) {
+            return Product::query()
+                ->leftJoin('product_images as thumb', function ($join) {
+                    $join->on('thumb.product_id', '=', 'products.id')
+                        ->where('thumb.is_thumbnail', '=', 1);
+                })
+                ->leftJoinSub($minSortPerProduct, 'ms', fn ($join) => $join->on('ms.product_id', '=', 'products.id'))
+                ->leftJoin('product_images as img', function ($join) {
+                    $join->on('img.product_id', '=', 'products.id')
+                        ->on('img.sort_order', '=', 'ms.min_sort');
+                })
+                ->where('products.status', 'active')
+                ->when($onlyFeatured, fn ($query) => $query->where('products.is_featured', true))
+                ->whereNull('products.deleted_at')
+                ->select([
+                    'products.id',
+                    'products.slug',
+                    'products.name',
+                    'products.short_description',
+                    'products.price',
+                    'products.sale_price',
+                    'products.created_at',
+                    DB::raw('MAX(COALESCE(thumb.path, img.path)) as image_path'),
+                    DB::raw('MAX(COALESCE(thumb.path_ratio_99_119, img.path_ratio_99_119)) as image_99_119'),
+                    DB::raw('0 as total_sold'),
+                ])
+                ->selectSub($minVariantPriceSub, 'from_variant_price')
+                ->selectSub($avgRatingSub, 'avg_rating')
+                ->selectSub($countRatingSub, 'reviews_count')
+                ->groupBy('products.id', 'products.slug', 'products.name', 'products.short_description', 'products.price', 'products.sale_price', 'products.created_at')
+                ->orderByDesc('products.created_at');
+        };
+
+        // --- G. Query utama: produk aktif + unggulan, diurutkan berdasarkan penjualan
         $q = Product::query()
             ->leftJoinSub($totalSales, 'ts', fn ($join) => $join->on('ts.product_id', '=', 'products.id'))
             ->leftJoin('product_images as thumb', function ($join) {
@@ -137,6 +170,7 @@ class TopSellingProducts extends Component
                     ->on('img.sort_order', '=', 'ms.min_sort');
             })
             ->where('products.status', 'active')
+            ->where('products.is_featured', true)
             ->whereNull('products.deleted_at')
             ->select([
                 'products.id',
@@ -171,41 +205,16 @@ class TopSellingProducts extends Component
         }
 
         $rows = $q->limit($limit)->get();
-        // --- H. Bila kosong (belum ada penjualan), fallback: featured aktif terbaru
-        if ($rows->isEmpty()) {
-            $fallback = Product::query()
-                ->leftJoin('product_images as thumb', function ($join) {
-                    $join->on('thumb.product_id', '=', 'products.id')
-                        ->where('thumb.is_thumbnail', '=', 1);
-                })
-                ->leftJoinSub($minSortPerProduct, 'ms', fn ($join) => $join->on('ms.product_id', '=', 'products.id'))
-                ->leftJoin('product_images as img', function ($join) {
-                    $join->on('img.product_id', '=', 'products.id')
-                        ->on('img.sort_order', '=', 'ms.min_sort');
-                })
-                ->where('products.status', 'active')
-                ->whereNull('products.deleted_at')
-                ->select([
-                    'products.id',
-                    'products.slug',
-                    'products.name',
-                    'products.short_description',
-                    'products.price',
-                    'products.sale_price',
-                    'products.created_at',
-                    DB::raw('MAX(COALESCE(thumb.path, img.path)) as image_path'),
-                    DB::raw('MAX(COALESCE(thumb.path_ratio_99_119, img.path_ratio_99_119)) as image_99_119'),
-                    DB::raw('0 as total_sold'),
-                ])
-                ->selectSub($minVariantPriceSub, 'from_variant_price')
-                ->selectSub($avgRatingSub, 'avg_rating')
-                ->selectSub($countRatingSub, 'reviews_count')
-                ->groupBy('products.id', 'products.slug', 'products.name', 'products.short_description', 'products.price', 'products.sale_price', 'products.created_at')
-                ->orderByDesc('products.created_at')
-                ->limit($limit)
-                ->get();
 
-            $rows = $fallback;
+        // --- H. Fallback bertingkat ke produk aktif seadanya
+        if ($rows->isEmpty()) {
+            // 1) produk aktif + unggulan terbaru
+            $rows = $latestFallbackQuery(true)->limit($limit)->get();
+        }
+
+        if ($rows->isEmpty()) {
+            // 2) produk aktif terbaru (tanpa syarat unggulan)
+            $rows = $latestFallbackQuery(false)->limit($limit)->get();
         }
 
         return $rows->map(function ($row) {
